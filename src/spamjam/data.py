@@ -50,7 +50,9 @@ class DatasetLoader:
             if not self.raw_path.exists():
                 print(" No local data found. Downloading from UCI...")
                 self.data_dir.mkdir(parents=True, exist_ok=True)
-                urllib.request.urlretrieve(self.url, self.raw_path)
+                download_path = self.raw_path.with_suffix(".download")
+                urllib.request.urlretrieve(self.url, download_path)
+                download_path.replace(self.raw_path)
                 print(" Download complete.")
 
             # 3. Convert .data to DataFrame and save as CSV
