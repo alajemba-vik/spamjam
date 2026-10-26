@@ -1,0 +1,10 @@
+random_state: 42
+
+data:
+  uci_id: 94
+  path: data/raw/spambase.csv
+  train_path: data/processed/train.csv
+  test_path: data/processed/test.csv
+
+split:
+  test_size: 0.2
