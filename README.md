@@ -9,7 +9,7 @@ To address this challenge, GrandPied's IT department is exploring SpamJam, an ML
 The goal is to achieve an appropriate balance between identifying unwanted messages and protecting important business communications.
 - **Target**: Whether an email is spam or ham (legitimate), 1 and 0 respectively.
 - **Task**: Supervised binary classification where we help IT admins identify unwanted emails while protecting legitimate business communication
-- **Cost**: Proposed by GrandPied, false positives (incorrectly classifies as spam but is ham) are more costly than negatives (incorrectly identifies as ham but is spam) because GrandPied relies heavily on receiving client emails. Although false negatives will allow unwanted emails allowing unwanted communications, this is accepted by GrandPied.
+ - **Cost**: GrandPied considers false positives (legitimate emails incorrectly classified as spam) more costly than false negatives (spam incorrectly classified as legitimate email) because it relies heavily on receiving client emails. Although false negatives allow unwanted messages through, GrandPied accepts this trade-off.
 
 
 # Work Breakdown
