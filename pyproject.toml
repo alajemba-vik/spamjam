@@ -1,0 +1,11 @@
+[project]
+name = "spamjam"
+version = "0.1.0"
+description = "Projet de détection de spam pour GrandPied"
+requires-python = ">=3.10"
+dependencies = [
+    "matplotlib>=3.10.9",
+    "pandas>=2.3.3",
+    "scikit-learn>=1.7.2",
+    "ucimlrepo>=0.0.7",
+]
