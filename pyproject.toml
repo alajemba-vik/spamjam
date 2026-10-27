@@ -1,12 +1,26 @@
 [project]
 name = "spamjam"
 version = "0.1.0"
-description = "Projet de détection de spam pour GrandPied"
+description = "Spam detection for GrandPied"
 requires-python = ">=3.10"
 dependencies = [
-    "matplotlib>=3.10.9",
-    "pandas>=2.3.3",
-    "pyyaml>=6.0.3",
-    "scikit-learn>=1.7.2",
-    "ucimlrepo>=0.0.7",
+    "matplotlib==3.10.9",
+    "pandas==2.3.3",
+    "pytest==8.4.2",
+    "pyyaml==6.0.3",
+    "scikit-learn==1.7.2",
+    "ucimlrepo==0.0.7",
 ]
+
+[project.optional-dependencies]
+dev = ["ruff==0.14.0", "ipykernel==7.4.0"]
+
+[build-system]
+# Tool pip uses to build and install this package (not needed at runtime).
+# A minimum version, not a pin: building doesn't affect our results.
+requires = ["setuptools>=68"]
+# The function inside setuptools that pip calls to do the build.
+build-backend = "setuptools.build_meta"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
