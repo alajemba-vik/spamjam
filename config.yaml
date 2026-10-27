@@ -5,6 +5,9 @@ data:
   path: data/raw/spambase.csv
   train_path: data/processed/train.csv
   test_path: data/processed/test.csv
+  processed_dir: "data/processed"
+  train_filename: "train_data.joblib"
+  test_filename: "test_data.joblib"
 
 split:
   test_size: 0.2
