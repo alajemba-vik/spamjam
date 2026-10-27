@@ -79,3 +79,9 @@ class DatasetLoader:
             random_state=self.random_state,
         )
         return train_df, test_df
+
+    def load_split(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Load the train and test sets from disk."""
+        train_df = pd.read_csv(self.train_path)
+        test_df = pd.read_csv(self.test_path)
+        return train_df, test_df

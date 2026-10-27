@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff==0.14.0", "ipykernel==7.4.0"]
+dev = ["ruff==0.14.0", "ipykernel==7.3.0"]
 
 [build-system]
 # Tool pip uses to build and install this package (not needed at runtime).
