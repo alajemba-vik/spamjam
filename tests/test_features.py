@@ -18,8 +18,8 @@ def train_test(loader, small_df):
         test.drop(columns=TARGET), test[TARGET],
     )
 
-# We fit the pipeline on the training rows only. Then we check that 
-# the scaler's stored means are EQUAL to the training means, and 
+# We fit the pipeline on the training rows only. Then we check that
+# the scaler's stored means are EQUAL to the training means, and
 # DIFFERENT from the means of train + test together.
 # If the scaler had seen test rows, the first check would fail.
 def test_scalers_are_fitted_on_train_only(train_test):
@@ -40,7 +40,7 @@ def test_scalers_are_fitted_on_train_only(train_test):
     cols = scaler.feature_names_in_
     assert np.allclose(scaler.mean_, np.log1p(X_train[cols]).mean())
     assert not np.allclose(scaler.mean_, np.log1p(all_rows[cols]).mean())
-    
+
 def test_pipeline_outputs_probabilities(train_test):
     X_train, y_train, X_test, _ = train_test
     pipe = build_pipeline(LogisticRegression()).fit(X_train, y_train)
