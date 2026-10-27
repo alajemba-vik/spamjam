@@ -8,3 +8,4 @@ CONFIG_PATH = PROJECT_ROOT / "config.yaml"
 
 # Target variable
 TARGET_COL = "is_spam"
+RANDOM_STATE = 42
