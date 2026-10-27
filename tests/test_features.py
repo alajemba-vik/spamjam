@@ -8,14 +8,13 @@ from sklearn.linear_model import LogisticRegression
 from spamjam import constants
 from spamjam.features import build_pipeline
 
-TARGET = constants.TARGET_COL
 
 @pytest.fixture
 def train_test(loader, small_df):
     train, test = loader.split(small_df)
     return (
-        train.drop(columns=TARGET), train[TARGET],
-        test.drop(columns=TARGET), test[TARGET],
+        train.drop(columns=constants.TARGET_COL), train[constants.TARGET_COL],
+        test.drop(columns=constants.TARGET_COL), test[constants.TARGET_COL],
     )
 
 # We fit the pipeline on the training rows only. Then we check that
