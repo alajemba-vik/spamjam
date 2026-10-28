@@ -22,7 +22,7 @@ grids:
     model__C: [0.01, 0.1, 1, 10]
     model__penalty: [l1, l2]
   # Empty grid = scikit-learn's default settings, used for the initial
-  # experiments. The grids to tune them are added in issue #6.
+  # experiments. The grids to tune them are added in the future.
   knn: {}
   linear_svm: {}
 
