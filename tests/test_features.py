@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
-from spamjam import constants
 from spamjam.features import build_pipeline
 
 
@@ -30,10 +29,3 @@ def test_scalers_are_fitted_on_train_only(train_test):
     cols = scaler.feature_names_in_
     assert np.allclose(scaler.mean_, np.log1p(X_train[cols]).mean())
     assert not np.allclose(scaler.mean_, np.log1p(all_rows[cols]).mean())
-
-def test_pipeline_outputs_probabilities(train_test):
-    X_train, y_train, X_test, _ = train_test
-    pipe = build_pipeline(LogisticRegression()).fit(X_train, y_train)
-    proba = pipe.predict_proba(X_test)[:, constants.SPAM]
-    assert proba.shape == (len(X_test),)
-    assert ((proba >= 0) & (proba <= 1)).all()

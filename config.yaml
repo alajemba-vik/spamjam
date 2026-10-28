@@ -21,6 +21,10 @@ grids:
   logistic_regression:
     model__C: [0.01, 0.1, 1, 10]
     model__penalty: [l1, l2]
+  # Empty grid = scikit-learn's default settings, used for the initial
+  # experiments. The grids to tune them are added in issue #6.
+  knn: {}
+  linear_svm: {}
 
 # The model trained by the CLI, where it is saved, and the decision threshold.
 model:
@@ -42,7 +46,3 @@ features:
     - word_freq_labs
     - word_freq_telnet
     - word_freq_technology
-
-grid_search:
-  lasso_C: [0.01, 0.1, 1.0, 10.0]
-  cv_folds: 5

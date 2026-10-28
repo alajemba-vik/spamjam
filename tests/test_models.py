@@ -2,19 +2,16 @@
 
 import numpy as np
 import pytest
-from sklearn.datasets import make_classification
 from sklearn.dummy import DummyClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import average_precision_score
 
 from spamjam.config import load_config
+from spamjam.constants import SPAM
 from spamjam.evaluate import compute_metrics
 from spamjam.models import Trainer, make_model
 
-# Dynamically load the random_state from config
-RANDOM_STATE = load_config()["random_state"]
-
 SMALL_GRID = {"model__C": [0.1, 1.0]}
+MODEL_NAMES = ["logistic_regression", "knn", "linear_svm"]
 
 
 @pytest.fixture
@@ -35,6 +32,25 @@ def test_from_config_reads_the_settings():
 def test_model_without_a_grid_is_rejected():
     with pytest.raises(ValueError, match="No grid"):
         Trainer.from_config(model_name="not_in_config")
+
+
+@pytest.mark.parametrize("name", MODEL_NAMES)
+def test_every_model_can_be_built_from_config(name):
+    assert Trainer.from_config(model_name=name).model_name == name
+
+
+@pytest.mark.parametrize("name", MODEL_NAMES)
+def test_predictions_are_probabilities(name, train_test):
+    X_train, y_train, X_test, _ = train_test
+    trainer = Trainer(name, {}, n_splits=3, scoring="average_precision",
+                      random_state=0)
+    proba = trainer.train(X_train, y_train).predict_proba(X_test)
+
+    # One row per email, one column per label (ham, spam).
+    assert proba.shape == (len(X_test), 2)
+    # Each value is a probability, and each row adds up to 1.
+    assert ((proba >= 0) & (proba <= 1)).all()
+    assert np.allclose(proba.sum(axis=1), 1)
 
 
 def test_unknown_model_name_is_rejected():
@@ -85,79 +101,12 @@ def test_metrics_follow_the_threshold():
     assert metrics["precision"] == 0.5
 
 
-def test_dummy_classifier_training():
-    """
-    Test that the DummyClassifier can fit and predict on synthetic data.
-    """
-    # Generate robust synthetic data (100 samples, 5 features, imbalanced)
-    # Using weights=[0.6, 0.4] to simulate the Spambase imbalance (Ham > Spam)
-    X_dummy, y_dummy = make_classification(
-        n_samples=100,
-        n_features=5,
-        n_informative=2,
-        n_classes=2,
-        weights=[0.6, 0.4],
-        random_state=RANDOM_STATE
-    )
+def test_model_beats_dummy_baseline(trainer, train_test):
+    X_train, y_train, X_test, y_test = train_test
+    trainer.train(X_train, y_train)
+    model_ap = trainer.evaluate(X_test, y_test, threshold=0.5)["average_precision"]
 
-    # Initialize and train the DummyClassifier
-    model = DummyClassifier(strategy="most_frequent", random_state=RANDOM_STATE)
-    model.fit(X_dummy, y_dummy)
-
-    # Make predictions
-    predictions = model.predict(X_dummy)
-
-    # Assertions
-    assert len(predictions) == 100, "Should predict one label per sample."
-    # Since strategy is 'most_frequent', and Ham (0) is the majority,
-    # all predictions should be 0
-    assert set(predictions) == {0}, \
-        "DummyClassifier should only predict the majority class (0)."
-
-
-def test_pipeline_no_leakage():
-    """
-    Test that the StandardScaler inside a Pipeline only fits on the training data.
-    """
-    # Generate synthetic data
-    X_dummy, y_dummy = make_classification(
-        n_samples=100,
-        n_features=5,
-        random_state=RANDOM_STATE
-    )
-
-    # Create a pipeline with a scaler and the dummy model
-    pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('model',
-         DummyClassifier(strategy="most_frequent", random_state=RANDOM_STATE)),
-    ])
-
-    # 1. Before fitting, the scaler should NOT have calculated any means (no leakage)
-    assert not hasattr(pipeline.named_steps['scaler'], 'mean_'), \
-        "Scaler should not be fitted before the pipeline is trained."
-
-    # 2. Fit the pipeline
-    pipeline.fit(X_dummy, y_dummy)
-
-    # 3. After fitting, the scaler SHOULD have calculated the means
-    assert hasattr(pipeline.named_steps['scaler'], 'mean_'), \
-        "Scaler should be fitted after the pipeline is trained."
-
-
-def test_pipeline_handles_invalid_data():
-    """
-    Test that the pipeline raises an error when given invalid data (e.g., 1D array).
-    """
-    # Create a 1D array instead of a 2D array (features must be 2D)
-    X_invalid = [1.0, 2.0, 3.0]
-    y_dummy = [0, 1, 0]
-
-    pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('model', DummyClassifier(strategy="most_frequent"))
-    ])
-
-    # Assert that a ValueError is raised
-    with pytest.raises(ValueError):
-        pipeline.fit(X_invalid, y_dummy)
+    # The dummy always predicts ham: its average precision is the spam rate.
+    dummy = DummyClassifier(strategy="most_frequent").fit(X_train, y_train)
+    dummy_ap = average_precision_score(y_test, dummy.predict_proba(X_test)[:, SPAM])
+    assert model_ap > dummy_ap
