@@ -15,3 +15,17 @@ split:
 grid_search:
     lasso_C: [ 0.01, 0.1, 1.0, 10.0 ]
     cv_folds: 5
+features:
+  # Words that describe the dataset's donor (George, at HP Labs) rather than spam.
+  # Used only for the comparison in notebooks/analysis.ipynb: we keep them in the
+  # model and report the dependence as a limitation (see the decision there).
+  donor_columns:
+    - word_freq_george
+    - word_freq_hp
+    - word_freq_hpl
+    - word_freq_650
+    - word_freq_857
+    - word_freq_415
+    - word_freq_labs
+    - word_freq_telnet
+    - word_freq_technology
