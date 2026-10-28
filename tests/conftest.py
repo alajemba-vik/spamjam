@@ -3,6 +3,7 @@
 import pandas as pd
 import pytest
 
+from spamjam import constants
 from spamjam.data import DatasetLoader
 
 TMP_DATA_FILE = "spambase.csv"
@@ -41,4 +42,15 @@ def loader(tmp_path) -> DatasetLoader:
         random_state=config_loader.random_state,
         train_path=tmp_path / TMP_TRAIN_FILE,
         test_path=tmp_path / TMP_TEST_FILE,
+    )
+
+
+@pytest.fixture
+def train_test(loader, small_df):
+    """The sample split into X_train, y_train, X_test, y_test."""
+    train, test = loader.split(small_df)
+    target = constants.TARGET_COL
+    return (
+        train.drop(columns=target), train[target],
+        test.drop(columns=target), test[target],
     )

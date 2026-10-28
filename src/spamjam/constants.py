@@ -6,5 +6,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = PROJECT_ROOT / "config.yaml"
 
-# Target variable
+# Target variable and its two labels
 TARGET_COL = "is_spam"
+HAM = 0
+SPAM = 1
