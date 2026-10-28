@@ -9,6 +9,25 @@ data:
 split:
   test_size: 0.2
 
+# 5 folds is the usual default (and scikit-learn's): each fold still has
+# about 670 emails to score on, and the grid needs only 5 fits per setting.
+cv:
+  n_splits: 5
+  scoring: average_precision
+
+# Hyperparameter grids searched by GridSearchCV, one per model.
+# "model__" means "a parameter of the pipeline step called model".
+grids:
+  logistic_regression:
+    model__C: [0.01, 0.1, 1, 10]
+    model__penalty: [l1, l2]
+
+# The model trained by the CLI, where it is saved, and the decision threshold.
+model:
+  name: logistic_regression
+  path: models/spamjam.joblib
+  threshold: 0.5
+
 features:
   # Words that describe the dataset's donor (George, at HP Labs) rather than spam.
   # Used only for the comparison in notebooks/analysis.ipynb: we keep them in the

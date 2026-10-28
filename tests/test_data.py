@@ -13,7 +13,8 @@ def test_dataset_has_expected_shape(real_df):
 
 # 0 (ham) and 1 (spam)
 def test_target_is_binary(real_df):
-    assert set(real_df[constants.TARGET_COL].unique()) == {0, 1}
+    labels = set(real_df[constants.TARGET_COL].unique())
+    assert labels == {constants.HAM, constants.SPAM}
 
 def test_no_missing_or_negative_values(real_df):
     assert real_df.isna().sum().sum() == 0

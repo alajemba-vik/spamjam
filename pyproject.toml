@@ -4,7 +4,12 @@ version = "0.1.0"
 description = "Spam detection for GrandPied"
 requires-python = ">=3.10"
 dependencies = [
+    "joblib==1.6.0",
     "matplotlib==3.10.9",
+    # No single numpy version supports both Python 3.10 and 3.14, so we pin one
+    # per Python version.
+    "numpy==2.2.6; python_version < '3.11'",
+    "numpy==2.3.5; python_version >= '3.11'",
     "pandas==2.3.3",
     "pytest==8.4.2",
     "pyyaml==6.0.3",

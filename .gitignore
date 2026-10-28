@@ -53,6 +53,7 @@ coverage.xml
 cover/
 .idea/
 data/processed/
+models/*.joblib
 # Translations
 *.mo
 *.pot

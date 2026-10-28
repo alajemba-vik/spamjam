@@ -2,11 +2,11 @@ import logging
 from pathlib import Path
 
 import pandas as pd
-import yaml
 from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
 
 import spamjam.constants as constants
+from spamjam.config import load_config
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +27,7 @@ class DatasetLoader:
     @classmethod
     def from_config(cls, config_path: Path = constants.CONFIG_PATH) -> "DatasetLoader":
         """Create a loader from the settings in config.yaml"""
-        with open(config_path, 'r', encoding="utf-8") as f:
-            config = yaml.safe_load(f)
+        config = load_config(config_path)
         return cls(
             data_path=constants.PROJECT_ROOT/config["data"]["path"],
             uci_id=config["data"]["uci_id"],

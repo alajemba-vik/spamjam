@@ -2,20 +2,11 @@
 
 import numpy as np
 import pandas as pd
-import pytest
 from sklearn.linear_model import LogisticRegression
 
 from spamjam import constants
 from spamjam.features import build_pipeline
 
-
-@pytest.fixture
-def train_test(loader, small_df):
-    train, test = loader.split(small_df)
-    return (
-        train.drop(columns=constants.TARGET_COL), train[constants.TARGET_COL],
-        test.drop(columns=constants.TARGET_COL), test[constants.TARGET_COL],
-    )
 
 # We fit the pipeline on the training rows only. Then we check that
 # the scaler's stored means are EQUAL to the training means, and
@@ -43,7 +34,6 @@ def test_scalers_are_fitted_on_train_only(train_test):
 def test_pipeline_outputs_probabilities(train_test):
     X_train, y_train, X_test, _ = train_test
     pipe = build_pipeline(LogisticRegression()).fit(X_train, y_train)
-    # predict_proba gives 2 columns (ham, spam); [:, 1] keeps the spam column.
-    proba = pipe.predict_proba(X_test)[:, 1]
+    proba = pipe.predict_proba(X_test)[:, constants.SPAM]
     assert proba.shape == (len(X_test),)
     assert ((proba >= 0) & (proba <= 1)).all()
