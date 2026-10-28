@@ -23,3 +23,7 @@ features:
     - word_freq_labs
     - word_freq_telnet
     - word_freq_technology
+
+grid_search:
+  lasso_C: [0.01, 0.1, 1.0, 10.0]
+  cv_folds: 5
