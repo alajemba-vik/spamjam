@@ -84,3 +84,15 @@ class DatasetLoader:
         train_df = pd.read_csv(self.train_path)
         test_df = pd.read_csv(self.test_path)
         return train_df, test_df
+
+    def load_or_create_split(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Return the saved train and test sets, creating them on the first run.
+
+        The split files are not in git, so a fresh clone has to create them:
+        download the data if needed, remove duplicates, split and save.
+        """
+        if self.train_path.exists() and self.test_path.exists():
+            return self.load_split()
+        train_df, test_df = self.split(self.remove_duplicates(self.load_data()))
+        self.save_split(train_df, test_df)
+        return train_df, test_df

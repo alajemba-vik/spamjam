@@ -12,6 +12,9 @@ from sklearn.metrics import (
 
 from spamjam.constants import HAM, SPAM
 
+# Name of the confusion matrix in the dictionary returned by compute_metrics().
+CONFUSION_MATRIX = "confusion_matrix"
+
 
 def compute_metrics(
     y_true: pd.Series, spam_probability: list[float], threshold: float
@@ -32,5 +35,5 @@ def compute_metrics(
         "roc_auc": roc_auc_score(y_true, spam_probability),
         "average_precision": average_precision_score(y_true, spam_probability),
         # [[true ham, false spam], [missed spam, true spam]]
-        "confusion_matrix": confusion_matrix(y_true, y_pred, labels=[HAM, SPAM]),
+        CONFUSION_MATRIX: confusion_matrix(y_true, y_pred, labels=[HAM, SPAM]),
     }
