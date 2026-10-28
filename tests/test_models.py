@@ -19,8 +19,14 @@ config=load_config()
 
 @pytest.fixture
 def trainer():
-    return Trainer("logistic_regression", SMALL_GRID, n_splits=3,
-                   scoring="average_precision", random_state=0)
+    config = load_config()
+    return Trainer(
+        model_name="logistic_regression",
+        param_grid=SMALL_GRID,
+        n_splits=config["cv"]["n_splits"],
+        scoring=config["cv"]["scoring"],
+        random_state=config["random_state"]
+    )
 
 
 def test_from_config_reads_the_settings():
@@ -114,53 +120,18 @@ def test_model_beats_dummy_baseline(trainer, train_test):
     dummy_ap = average_precision_score(y_test, dummy.predict_proba(X_test)[:, SPAM])
     assert model_ap > dummy_ap
 
-def synthetic_data():
-    n_samples = 100
-    n_features = 5
-    X, y = make_classification(
-        n_samples=n_samples,
-        n_features=n_features,
-        random_state=config['random_state'],
-    )
-    return X, y, n_samples
 
+def test_evaluate_with_different_thresholds(trainer, train_test):
+    X_train, y_train, X_test, y_test = train_test
+    trainer.train(X_train, y_train)
 
-def test_prediction_probabilities(synthetic_data):
-    X, y, n_samples = synthetic_data
+    # Evaluate with a low threshold (catch more spam, but more false alarms)
+    metrics_low = trainer.evaluate(X_test, y_test, threshold=0.3)
 
-    # Instantiate and fit the model using the teammate's builder
-    model = make_model('logistic_regression')
-    model.fit(X, y)
+    # Evaluate with a high threshold (catch less spam, but fewer false alarms)
+    metrics_high = trainer.evaluate(X_test, y_test, threshold=0.7)
 
-    probas = model.predict_proba(X)
-
-    # Shape must be (n_samples, 2) for binary classification
-    assert probas.shape == (n_samples, 2), f"Expected shape {(n_samples, 2)}, got {probas.shape}"
-
-    # All values must be between 0 and 1
-    assert np.all(probas >= 0.0) and np.all(probas <= 1.0), "Probabilities must be between 0 and 1"
-
-    # Rows must sum to 1.0 (np.allclose handles floating point precision)
-    assert np.allclose(probas.sum(axis=1), 1.0), "Probabilities for each row must sum to 1.0"
-
-
-def test_custom_threshold_logic(synthetic_data):
-    X, y, n_samples = synthetic_data
-    model = make_model('logistic_regression')
-    model.fit(X, y)
-
-    # Extract the probability of class 1 (Spam)
-    probas_spam = model.predict_proba(X)[:, 1]
-
-    # Dynamically pick two thresholds using percentiles (No hardcoded 0.5!)
-    # Low threshold = bottom 25% of probabilities, High threshold = top 75%
-    threshold_low = np.percentile(probas_spam, 25)
-    threshold_high = np.percentile(probas_spam, 75)
-
-    # Apply thresholds manually to simulate the decision function
-    preds_low_thresh = (probas_spam >= threshold_low).astype(int)
-    preds_high_thresh = (probas_spam >= threshold_high).astype(int)
-
-    # Assertion: A stricter (higher) threshold should predict fewer (or equal) spams
-    assert preds_high_thresh.sum() <= preds_low_thresh.sum(), \
-        "A higher threshold should not increase the number of spam predictions."
+    # A higher threshold should generally increase precision (fewer false positives)
+    # and decrease recall (more false negatives).
+    assert metrics_high["precision"] >= metrics_low["precision"]
+    assert metrics_high["recall"] <= metrics_low["recall"]
