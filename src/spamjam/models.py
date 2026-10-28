@@ -8,7 +8,9 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
+from sklearn.svm import SVC
 
 from spamjam.config import load_config
 from spamjam.constants import CONFIG_PATH, SPAM
@@ -23,6 +25,13 @@ def make_model(name: str, random_state: int) -> BaseEstimator:
     if name == "logistic_regression":
         # liblinear supports both L1 and L2, which our grid compares.
         return LogisticRegression(solver="liblinear", random_state=random_state)
+    if name == "knn":
+        return KNeighborsClassifier()
+    if name == "linear_svm":
+        # SVC with a linear kernel rather than LinearSVC, because LinearSVC
+        # can't give probabilities. probability=True adds them; our metrics
+        # and predictions need the probability of spam.
+        return SVC(kernel="linear", probability=True, random_state=random_state)
     raise ValueError(f"Unknown model {name!r}.")
 
 
@@ -67,7 +76,10 @@ class Trainer:
         )
 
     def train(self, X: pd.DataFrame, y: pd.Series) -> Pipeline:
-        """Tune the model with cross-validation and return the best pipeline."""
+        """Tune the model with cross-validation and return the best pipeline.
+
+        With an empty grid, this just scores the model's default settings.
+        """
         pipeline = build_pipeline(make_model(self.model_name, self.random_state))
         cv = StratifiedKFold(
             n_splits=self.n_splits, shuffle=True, random_state=self.random_state
