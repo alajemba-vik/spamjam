@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from sklearn.datasets import make_classification
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import average_precision_score
 
@@ -9,9 +10,11 @@ from spamjam.config import load_config
 from spamjam.constants import SPAM
 from spamjam.evaluate import compute_metrics
 from spamjam.models import Trainer, make_model
+from spamjam.config import load_config
 
 SMALL_GRID = {"model__C": [0.1, 1.0]}
 MODEL_NAMES = ["logistic_regression", "knn", "linear_svm"]
+config=load_config()
 
 
 @pytest.fixture
@@ -110,3 +113,54 @@ def test_model_beats_dummy_baseline(trainer, train_test):
     dummy = DummyClassifier(strategy="most_frequent").fit(X_train, y_train)
     dummy_ap = average_precision_score(y_test, dummy.predict_proba(X_test)[:, SPAM])
     assert model_ap > dummy_ap
+
+def synthetic_data():
+    n_samples = 100
+    n_features = 5
+    X, y = make_classification(
+        n_samples=n_samples,
+        n_features=n_features,
+        random_state=config['random_state'],
+    )
+    return X, y, n_samples
+
+
+def test_prediction_probabilities(synthetic_data):
+    X, y, n_samples = synthetic_data
+
+    # Instantiate and fit the model using the teammate's builder
+    model = make_model('logistic_regression')
+    model.fit(X, y)
+
+    probas = model.predict_proba(X)
+
+    # Shape must be (n_samples, 2) for binary classification
+    assert probas.shape == (n_samples, 2), f"Expected shape {(n_samples, 2)}, got {probas.shape}"
+
+    # All values must be between 0 and 1
+    assert np.all(probas >= 0.0) and np.all(probas <= 1.0), "Probabilities must be between 0 and 1"
+
+    # Rows must sum to 1.0 (np.allclose handles floating point precision)
+    assert np.allclose(probas.sum(axis=1), 1.0), "Probabilities for each row must sum to 1.0"
+
+
+def test_custom_threshold_logic(synthetic_data):
+    X, y, n_samples = synthetic_data
+    model = make_model('logistic_regression')
+    model.fit(X, y)
+
+    # Extract the probability of class 1 (Spam)
+    probas_spam = model.predict_proba(X)[:, 1]
+
+    # Dynamically pick two thresholds using percentiles (No hardcoded 0.5!)
+    # Low threshold = bottom 25% of probabilities, High threshold = top 75%
+    threshold_low = np.percentile(probas_spam, 25)
+    threshold_high = np.percentile(probas_spam, 75)
+
+    # Apply thresholds manually to simulate the decision function
+    preds_low_thresh = (probas_spam >= threshold_low).astype(int)
+    preds_high_thresh = (probas_spam >= threshold_high).astype(int)
+
+    # Assertion: A stricter (higher) threshold should predict fewer (or equal) spams
+    assert preds_high_thresh.sum() <= preds_low_thresh.sum(), \
+        "A higher threshold should not increase the number of spam predictions."

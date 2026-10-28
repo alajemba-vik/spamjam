@@ -21,10 +21,12 @@ grids:
   logistic_regression:
     model__C: [0.01, 0.1, 1, 10]
     model__penalty: [l1, l2]
-  # Empty grid = scikit-learn's default settings, used for the initial
-  # experiments. The grids to tune them are added in the future.
-  knn: {}
-  linear_svm: {}
+  knn:
+    #Tuning the number of neighbors(k)
+    model__n_neighbors: [3, 5, 7, 9, 11, 15]
+  linear_svm:
+    #Tuning the regularization parameter C for the SVM
+    model__C: [0.01, 0.1, 1, 10]
 
 # The model trained by the CLI, where it is saved, and the decision threshold.
 model:
