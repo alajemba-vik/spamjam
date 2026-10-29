@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from sklearn.datasets import make_classification
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import average_precision_score
 
@@ -9,15 +10,23 @@ from spamjam.config import load_config
 from spamjam.constants import SPAM
 from spamjam.evaluate import compute_metrics
 from spamjam.models import Trainer, make_model
+from spamjam.config import load_config
 
 SMALL_GRID = {"model__C": [0.1, 1.0]}
 MODEL_NAMES = ["logistic_regression", "knn", "linear_svm"]
+config=load_config()
 
 
 @pytest.fixture
 def trainer():
-    return Trainer("logistic_regression", SMALL_GRID, n_splits=3,
-                   scoring="average_precision", random_state=0)
+    config = load_config()
+    return Trainer(
+        model_name="logistic_regression",
+        param_grid=SMALL_GRID,
+        n_splits=config["cv"]["n_splits"],
+        scoring=config["cv"]["scoring"],
+        random_state=config["random_state"]
+    )
 
 
 def test_from_config_reads_the_settings():
@@ -110,3 +119,19 @@ def test_model_beats_dummy_baseline(trainer, train_test):
     dummy = DummyClassifier(strategy="most_frequent").fit(X_train, y_train)
     dummy_ap = average_precision_score(y_test, dummy.predict_proba(X_test)[:, SPAM])
     assert model_ap > dummy_ap
+
+
+def test_evaluate_with_different_thresholds(trainer, train_test):
+    X_train, y_train, X_test, y_test = train_test
+    trainer.train(X_train, y_train)
+
+    # Evaluate with a low threshold (catch more spam, but more false alarms)
+    metrics_low = trainer.evaluate(X_test, y_test, threshold=0.3)
+
+    # Evaluate with a high threshold (catch less spam, but fewer false alarms)
+    metrics_high = trainer.evaluate(X_test, y_test, threshold=0.7)
+
+    # A higher threshold should generally increase precision (fewer false positives)
+    # and decrease recall (more false negatives).
+    assert metrics_high["precision"] >= metrics_low["precision"]
+    assert metrics_high["recall"] <= metrics_low["recall"]
