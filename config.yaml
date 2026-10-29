@@ -48,3 +48,7 @@ features:
     - word_freq_labs
     - word_freq_telnet
     - word_freq_technology
+
+#Target precision
+threshold:
+  target_precision: 0.95
