@@ -5,3 +5,6 @@
 - Explaining concepts we wanted to understand before using them
 - Suggesting and testing code
 - Running checks
+- Debugging: Resolving Git merge conflicts and corrupted Jupyter Notebook states.
+- Drafting `pytest` functions for decision thresholds and prediction probabilities.
+- Fixing Scikit-Learn parameter errors (e.g., resolving `GridSearchCV` step names and `BaseEstimator` errors).
