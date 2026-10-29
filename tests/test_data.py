@@ -55,3 +55,14 @@ def test_save_and_load_split_round_trip(loader, small_df):
     train_back, test_back = loader.load_split()
     assert train_back.shape == train.shape
     assert test_back.shape == test.shape
+
+
+def test_split_is_created_once_then_loaded(loader, small_df):
+    small_df.to_csv(loader.data_path, index=False)  # no download needed
+    train_df, test_df = loader.load_or_create_split()
+    assert loader.train_path.exists() and loader.test_path.exists()
+
+    # Second call: the saved files are loaded, not a new split.
+    train_again, test_again = loader.load_or_create_split()
+    assert train_again.equals(pd.read_csv(loader.train_path))
+    assert len(train_again) == len(train_df) and len(test_again) == len(test_df)

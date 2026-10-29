@@ -8,7 +8,7 @@ from sklearn.metrics import average_precision_score
 
 from spamjam.config import load_config
 from spamjam.constants import SPAM
-from spamjam.evaluate import compute_metrics
+from spamjam.evaluate import CONFUSION_MATRIX, compute_metrics
 from spamjam.models import Trainer, make_model
 from spamjam.config import load_config
 
@@ -80,7 +80,7 @@ def test_evaluate_returns_metrics_in_range(trainer, train_test):
     metrics = trainer.evaluate(X_test, y_test, threshold=0.5)
     for name in ["precision", "recall", "f1", "roc_auc", "average_precision"]:
         assert 0 <= metrics[name] <= 1
-    assert np.sum(metrics["confusion_matrix"]) == len(y_test)
+    assert np.sum(metrics[CONFUSION_MATRIX]) == len(y_test)
 
 
 def test_evaluate_before_training_is_rejected(trainer, train_test):
@@ -106,7 +106,7 @@ def test_metrics_follow_the_threshold():
     spam_probability = [0.1, 0.6, 0.4, 0.9]
     metrics = compute_metrics(y_true, spam_probability, threshold=0.5)
     # predicted: 0, 1, 0, 1 -> 1 true ham, 1 false spam, 1 missed spam, 1 true spam
-    assert metrics["confusion_matrix"].tolist() == [[1, 1], [1, 1]]
+    assert metrics[CONFUSION_MATRIX].tolist() == [[1, 1], [1, 1]]
     assert metrics["precision"] == 0.5
 
 

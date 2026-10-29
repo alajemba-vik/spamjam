@@ -17,6 +17,10 @@ dependencies = [
     "ucimlrepo==0.0.7",
 ]
 
+# Installs the `spamjam` command, which runs main() in cli.py.
+[project.scripts]
+spamjam = "spamjam.cli:main"
+
 [project.optional-dependencies]
 dev = ["ruff==0.14.0", "ipykernel==7.3.0"]
 
