@@ -65,6 +65,15 @@ def test_labelled_emails_give_a_dataset(labelled_folder):
     assert table[TARGET_COL].tolist() == [HAM, SPAM]
 
 
+def test_only_folders_inside_the_given_one_give_labels(tmp_path):
+    # A file called spam.txt, inside a project folder called "spam", is not
+    # labelled: only the spam/ and ham/ folders inside the emails folder count.
+    emails = tmp_path / "spam" / "emails"
+    emails.mkdir(parents=True)
+    (emails / "spam.txt").write_text(SPAM_TEXT, encoding="utf-8")
+    assert read_emails(emails)[TARGET_COL].isna().all()
+
+
 def test_a_folder_without_emails_is_rejected(tmp_path):
     with pytest.raises(ValueError, match="No .txt"):
         read_emails(tmp_path)

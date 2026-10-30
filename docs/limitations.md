@@ -43,8 +43,9 @@ less spam: that is roughly what the donor's words were worth on Spambase.
 It is still optimistic for GrandPied, because the other limitations below
 stay the same.
 
-The published results we compare with (UCI, Hastie, Tibshirani and Friedman,
-Shalizi at CMU) also train on all 57 features, so the comparison is fair, but
+The published results we compare with (UCI; Hastie, Tibshirani and Friedman,
+*The Elements of Statistical Learning*, Table 1.1; Shalizi at CMU) also train
+on all 57 features, so the comparison is fair, but
 none of them removes these words either.
 
 
@@ -107,7 +108,9 @@ Spambase gives 57 numbers per email, not the email itself. The model never
 sees the sender, the links, the headers, the attachments or the order of the
 words, which real spam filters rely on heavily. It also can't learn new
 words: a spam about "bitcoin" or "crypto" looks the same to it as an email
-without those words.
+without those words. Some emails can't be told apart at all: after removing
+exact copies, three pairs of emails in Spambase have the same 57 numbers but
+opposite labels, one spam and one real email.
 
 
 ## 6. It is easy to fool

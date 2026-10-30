@@ -43,9 +43,9 @@ def message_text(message: EmailMessage) -> str:
     return f"Subject: {message['subject'] or ''}\n\n{text}"
 
 
-def label_of(path: Path) -> int | None:
-    """Return the label given by a ``spam``/``ham`` folder or mbox name, if any."""
-    for name in [path.stem, *(parent.name for parent in path.parents)]:
+def label_of(names: list[str]) -> int | None:
+    """Return the label given by the first ``spam`` or ``ham`` name, if any."""
+    for name in names:
         if name.lower() in LABELS:
             return LABELS[name.lower()]
     return None
@@ -57,7 +57,8 @@ def read_emails(path: Path) -> pd.DataFrame:
     if path.is_file() and path.suffix == MBOX_FILE:
         for i, message in enumerate(mailbox.mbox(path, factory=None)):
             parsed = message_from_bytes(message.as_bytes(), policy=policy.default)
-            rows.append((f"{path.name}#{i}", message_text(parsed), label_of(path)))
+            label = label_of([path.stem])   # spam.mbox or ham.mbox
+            rows.append((f"{path.name}#{i}", message_text(parsed), label))
     elif path.is_dir():
         for file in sorted(path.rglob("*")):
             if file.suffix == ".txt":
@@ -68,7 +69,10 @@ def read_emails(path: Path) -> pd.DataFrame:
                 )
             else:
                 continue
-            rows.append((str(file.relative_to(path)), text, label_of(file)))
+            # Only the folders inside `path` count, not the file's own name or
+            # the folders above `path` (e.g. a "spam" project folder).
+            folders = file.relative_to(path).parent.parts
+            rows.append((str(file.relative_to(path)), text, label_of(list(folders))))
     else:
         raise ValueError(f"{path} is not a folder of emails or an .mbox file")
     if not rows:

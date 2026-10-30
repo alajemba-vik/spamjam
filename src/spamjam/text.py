@@ -8,9 +8,10 @@ The Spambase documentation says how each feature was computed from an email:
 - capital_run_length_*: the average length, the longest length and the total
   length of the runs of capital letters ("FREE MONEY" has runs of 4 and 5).
 
-It doesn't say whether the email headers were counted, or exactly what counts
-as a character, so the values for a pasted email are close to what Spambase
-would give, not guaranteed identical.
+It doesn't say whether the email headers were counted, whether words were
+matched ignoring case (we do, since the 48 words are lowercase), or exactly
+what counts as a character, so the values for a pasted email are close to
+what Spambase would give, not guaranteed identical.
 """
 
 import re

@@ -139,7 +139,7 @@ It opens a page where you either edit the feature values (the box starts with `e
 # Tests and code quality
 
 ```bash
-pytest        # 67 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
+pytest        # 68 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
 ruff check .  # style (PEP 8), errors, import order, names and docstrings, notebooks included
 ```
 
@@ -179,23 +179,34 @@ docs/limitations.md      what SpamJam can't do, with the numbers behind it
 ```
 
 
+# Sources
+
+- Data: Hopkins, M., Reeber, E., Forman, G. and Suermondt, J. (1999). *Spambase* [Dataset]. UCI Machine Learning Repository, CC BY 4.0. https://doi.org/10.24432/C53G6X
+- Feature definitions (used in `src/spamjam/text.py`): the Spambase documentation on the UCI page above.
+- Library: Pedregosa, F. et al. (2011). Scikit-learn: Machine Learning in Python. *Journal of Machine Learning Research*, 12, 2825–2830.
+- Published results we compare with (`docs/limitations.md`): Hastie, T., Tibshirani, R. and Friedman, J. (2009). *The Elements of Statistical Learning*, 2nd ed., Springer (the spam example); Shalizi, C., *Data Mining* (36-462), Carnegie Mellon University, homework 2: https://www.stat.cmu.edu/~cshalizi/dm/22/hw/02/hw-02.pdf
+- How real filters are personal (`docs/limitations.md`): Apache SpamAssassin, `sa-learn` manual: https://manpages.debian.org/jessie/spamassassin/sa-learn.1p.en.html; Google Workspace, *An overview of Gmail's spam filters*: https://workspace.google.com/blog/identity-and-security/an-overview-of-gmails-spam-filters
+- Margin of error: the Wilson score interval for a proportion (Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. *Journal of the American Statistical Association*, 22(158), 209–212).
+- Use of AI tools: see `AI_USAGE.md`.
+
+
 # Work Breakdown
 
 https://github.com/users/alajemba-vik/projects/5/views/1
 
 
 # Quick Checklist
-- [ ] A clean pipeline
-- [ ] Models compared under cross-validation
-- [ ] A metric that matches the goal
-- [ ] An honest test
-- [ ] A clear interpretation
-- [ ] Assesses code
-- [ ] A structured package
-- [ ] Classes
-- [ ] Tests
-- [ ] command-line tool
-- [ ] Notebook 
+- [x] A clean pipeline
+- [x] Models compared under cross-validation
+- [x] A metric that matches the goal
+- [x] An honest test
+- [x] A clear interpretation
+- [x] Assesses code
+- [x] A structured package
+- [x] Classes
+- [x] Tests
+- [x] command-line tool
+- [x] Notebook 
 - [ ] Report
 - [ ] AI_USAGE.md
 - [ ] Presentation

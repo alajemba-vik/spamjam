@@ -73,7 +73,9 @@ MSG_CV_SCORE = "CV {scoring}: {score:.4f}"
 MSG_MODEL_SAVED = "Model saved to {path}"
 MSG_TEST_SET = "Test set: {n_emails} emails, threshold {threshold}"
 MSG_SAVED = "Saved {n_emails} emails to {path}"
-MSG_NO_LABELS = "No spam/ or ham/ folders, so the file has no is_spam column."
+MSG_NO_LABELS = (
+    "Not every email is in a spam/ or ham/ folder, so the file has no is_spam column."
+)
 
 # Labels of the confusion matrix table: rows are the true labels, columns the
 # predictions, both in the order HAM, SPAM (as in evaluate.py).
