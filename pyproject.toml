@@ -2,12 +2,14 @@
 name = "spamjam"
 version = "0.1.0"
 description = "Spam detection for GrandPied"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 # Everything is installed with one `pip install -e .`: the notebooks (Jupyter
 # kernel), the tests (pytest), the quality checks (ruff) and the Streamlit page
 # are part of the project, not optional extras.
 dependencies = [
-    "altair==6.3.0",
+    # Charts on the Streamlit page. altair 6.3 and later need Python 3.11, so
+    # we stay on 6.2.2, which supports 3.10 too.
+    "altair==6.2.2",
     "ipykernel==7.3.0",
     "joblib==1.6.0",
     "matplotlib==3.10.9",
