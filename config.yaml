@@ -19,20 +19,25 @@ cv:
 # "model__" means "a parameter of the pipeline step called model".
 grids:
   logistic_regression:
-    model__C: [0.01, 0.1, 1, 10]
+    model__C: [0.01, 0.1, 1, 10, 100]
     model__penalty: [l1, l2]
   knn:
-    #Tuning the number of neighbors(k)
-    model__n_neighbors: [3, 5, 7, 9, 11, 15]
+    # Number of neighbours, and whether closer neighbours count more (distance).
+    model__n_neighbors: [5, 11, 15, 21, 31, 51]
+    model__weights: [uniform, distance]
   linear_svm:
-    #Tuning the regularization parameter C for the SVM
-    model__C: [0.01, 0.1, 1, 10]
+    # Regularisation strength, as for logistic regression.
+    model__C: [0.01, 0.1, 1, 10, 100]
 
 # The model trained by the CLI, where it is saved, and the decision threshold.
 model:
   name: logistic_regression
   path: models/spamjam.joblib
-  threshold: 0.5
+  # Precision on spam we aim for (GrandPied: blocking a client email is costly).
+  target_precision: 0.95
+  # Lowest threshold that reaches target_precision on the out-of-fold
+  # predictions (see "Decision threshold" in notebooks/analysis.ipynb).
+  threshold: 0.782
 
 features:
   # Words that describe the dataset's donor (George, at HP Labs) rather than spam.
@@ -48,7 +53,3 @@ features:
     - word_freq_labs
     - word_freq_telnet
     - word_freq_technology
-
-#Target precision
-threshold:
-  target_precision: 0.95
