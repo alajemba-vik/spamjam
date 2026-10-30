@@ -77,6 +77,17 @@ def test_predict_prints_a_probability_and_a_label(trained, capsys):
     assert result["is_spam"] in (0, 1)
 
 
+def test_predict_reads_the_text_of_an_email(trained, capsys):
+    config_path, _ = trained
+    text_path = PROJECT_ROOT / "examples" / "new_email.txt"
+
+    capsys.readouterr()  # ignore what earlier steps printed
+    main(["--config", str(config_path), "predict", "--text", str(text_path)])
+    result = json.loads(capsys.readouterr().out)
+    assert 0 <= result["spam_probability"] <= 1
+    assert result["is_spam"] in (0, 1)
+
+
 def test_predict_rejects_a_bad_input_file(trained, tmp_path):
     config_path, _ = trained
     input_path = tmp_path / "bad.json"

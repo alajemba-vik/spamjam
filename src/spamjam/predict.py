@@ -3,7 +3,8 @@
 Our model never sees the text of an email. Like the Spambase data it was
 trained on, it only sees 57 numbers per email: how often some words and
 characters appear, and how long the runs of capital letters are. So a "new
-email" for the model is those 57 named values.
+email" for the model is those 57 named values. `spamjam.text` computes them
+from the text of an email.
 
 We read them from a JSON file, because JSON stores each value next to its
 feature name, so the file is easy to read and the order doesn't matter::

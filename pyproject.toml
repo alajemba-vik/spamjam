@@ -4,9 +4,10 @@ version = "0.1.0"
 description = "Spam detection for GrandPied"
 requires-python = ">=3.10"
 # Everything is installed with one `pip install -e .`: the notebooks (Jupyter
-# kernel), the tests (pytest) and the quality checks (ruff) are part of the
-# project, not optional extras.
+# kernel), the tests (pytest), the quality checks (ruff) and the Streamlit page
+# are part of the project, not optional extras.
 dependencies = [
+    "altair==6.3.0",
     "ipykernel==7.3.0",
     "joblib==1.6.0",
     "matplotlib==3.10.9",
@@ -19,6 +20,8 @@ dependencies = [
     "pyyaml==6.0.3",
     "ruff==0.14.0",
     "scikit-learn==1.7.2",
+    # Streamlit 1.66 and later need Python 3.11, so we stay on 1.60.
+    "streamlit==1.60.0",
     "ucimlrepo==0.0.7",
 ]
 

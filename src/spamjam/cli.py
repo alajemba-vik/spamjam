@@ -3,6 +3,7 @@
     spamjam train                     train the model and save it
     spamjam evaluate                  print the metrics on the test set
     spamjam predict --input FILE      predict one new email from a JSON file
+    spamjam predict --text FILE       predict one new email from its text
 
 Every setting (data paths, model, grid, threshold) comes from config.yaml.
 """
@@ -21,6 +22,7 @@ from spamjam.data import DatasetLoader
 from spamjam.evaluate import CONFUSION_MATRIX
 from spamjam.models import Trainer
 from spamjam.predict import predict_email, read_email_features
+from spamjam.text import features_from_text
 
 # Commands, as typed after `spamjam`.
 CMD_TRAIN = "train"
@@ -33,7 +35,14 @@ HELP_CONFIG = "settings file (default: the project's config.yaml)"
 HELP_TRAIN = "train the model and save it"
 HELP_EVALUATE = "print the metrics on the test set"
 HELP_PREDICT = "predict one new email"
-HELP_INPUT = "JSON file with the email's feature values"
+HELP_INPUT = (
+    "JSON file with the email's 57 feature values, like examples/new_case.json "
+    "(every feature is described in docs/data_dictionary.md)"
+)
+HELP_TEXT = (
+    "plain text file with the email itself, like examples/new_email.txt; "
+    "SpamJam computes the 57 features from it"
+)
 
 # Messages printed by the commands.
 MSG_CV_SCORE = "CV {scoring}: {score:.4f}"
@@ -111,12 +120,21 @@ def evaluate(
 
 
 def predict(
-    trainer: Trainer, model_path: Path, input_path: Path, threshold: float
+    trainer: Trainer,
+    model_path: Path,
+    threshold: float,
+    input_path: Path | None = None,
+    text_path: Path | None = None,
 ) -> None:
-    """Print the prediction for one email read from a JSON file."""
+    """Print the prediction for one email, from a JSON file or a text file."""
     load_trained_model(trainer, model_path)
     try:
-        features = read_email_features(input_path)
+        if text_path is not None:
+            text = text_path.read_text(encoding="utf-8")
+            feature_names = list(trainer.model.feature_names_in_)
+            features = features_from_text(text, feature_names)
+        else:
+            features = read_email_features(input_path)
         result = predict_email(trainer.model, features, threshold)
     except (OSError, ValueError) as error:
         sys.exit(ERROR_CANNOT_PREDICT.format(error=error))
@@ -136,7 +154,10 @@ def build_parser() -> argparse.ArgumentParser:
     commands.add_parser(CMD_TRAIN, help=HELP_TRAIN)
     commands.add_parser(CMD_EVALUATE, help=HELP_EVALUATE)
     predict_parser = commands.add_parser(CMD_PREDICT, help=HELP_PREDICT)
-    predict_parser.add_argument("--input", type=Path, required=True, help=HELP_INPUT)
+    # One of the two, not both.
+    email_input = predict_parser.add_mutually_exclusive_group(required=True)
+    email_input.add_argument("--input", type=Path, metavar="FILE", help=HELP_INPUT)
+    email_input.add_argument("--text", type=Path, metavar="FILE", help=HELP_TEXT)
     return parser
 
 
@@ -162,7 +183,7 @@ def main(argv: list[str] | None = None) -> None:
     elif args.command == CMD_EVALUATE:
         evaluate(trainer, loader, model_path, threshold)
     elif args.command == CMD_PREDICT:
-        predict(trainer, model_path, args.input, threshold)
+        predict(trainer, model_path, threshold, args.input, args.text)
 
 
 if __name__ == "__main__":

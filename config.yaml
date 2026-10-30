@@ -39,6 +39,10 @@ model:
   # predictions (see "Decision threshold" in notebooks/analysis.ipynb).
   threshold: 0.782
 
+# The Streamlit page (streamlit run src/spamjam/app.py).
+app:
+  example_path: examples/new_case.json
+
 features:
   # Words that describe the dataset's donor (George, at HP Labs) rather than spam.
   # Used only for the comparison in notebooks/analysis.ipynb: we keep them in the
