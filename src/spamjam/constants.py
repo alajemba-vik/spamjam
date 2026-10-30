@@ -1,3 +1,5 @@
+"""Fixed facts used across the package: project paths and the target labels."""
+
 from pathlib import Path
 
 CONFIG_FILE = "config.yaml"

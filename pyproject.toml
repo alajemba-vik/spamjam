@@ -32,4 +32,13 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
+# E/W: PEP 8 style, F: errors (unused imports...), I: import order,
+# N: PEP 8 names, D1: a docstring on every public module, class and function.
+select = ["E", "F", "W", "I", "N", "D1"]
+# X (the data matrix) is scikit-learn's naming convention, so we keep it.
+ignore = ["N803", "N806"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test names already describe what they check; notebooks explain in markdown.
+"tests/*" = ["D1"]
+"notebooks/*" = ["D1"]

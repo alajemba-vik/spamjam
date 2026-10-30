@@ -1,3 +1,5 @@
+"""Download the Spambase dataset, remove duplicates and split it."""
+
 import logging
 from pathlib import Path
 
@@ -17,6 +19,16 @@ class DatasetLoader:
     def __init__(self, data_path: Path, uci_id: int,
                  test_size: float, random_state: int,
                  train_path: Path, test_path: Path) -> None:
+        """Store where the data lives and how to split it.
+
+        Args:
+            data_path: where the raw dataset is saved (downloaded on first use).
+            uci_id: id of the dataset in the UCI repository (94 for Spambase).
+            test_size: share of emails kept for the test set.
+            random_state: seed of the split, so it is the same on every run.
+            train_path: where the training set is saved.
+            test_path: where the test set is saved.
+        """
         self.data_path = data_path
         self.uci_id = uci_id
         self.test_size = test_size
@@ -26,7 +38,7 @@ class DatasetLoader:
 
     @classmethod
     def from_config(cls, config_path: Path = constants.CONFIG_PATH) -> "DatasetLoader":
-        """Create a loader from the settings in config.yaml"""
+        """Create a loader from the settings in config.yaml."""
         config = load_config(config_path)
         return cls(
             data_path=constants.PROJECT_ROOT/config["data"]["path"],
