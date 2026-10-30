@@ -10,13 +10,14 @@ import json
 from pathlib import Path
 
 import altair as alt
+import numpy as np
 import pandas as pd
 import streamlit as st
 from sklearn.pipeline import Pipeline
 
 from spamjam.config import load_config
 from spamjam.constants import CONFIG_PATH, PROJECT_ROOT, SPAM
-from spamjam.models import Trainer
+from spamjam.models import Trainer, version_settings
 from spamjam.predict import features_to_row, predict_email
 from spamjam.text import features_from_text
 
@@ -82,11 +83,12 @@ MSG_WHY = (
 )
 INFO_TITLE = "Comment ça marche"
 INFO_TEXT = (
-    "- **Model:** {name}, trained by `spamjam train`\n"
-    "- **Threshold:** {threshold}, from `config.yaml`\n"
-    "- **On the test set:** 95 % of flagged emails were spam, and 14 of 506 real "
-    "emails were flagged. The 95 % holds when about 40 % of the mail is spam, "
-    "as in Spambase; with less spam it is lower\n"
+    "- **Model:** {name}, trained by `spamjam train`, in two versions: with all "
+    "57 features, and without the donor's words (switch on the left)\n"
+    "- **Thresholds:** {threshold} and {threshold_no_donor}, from `config.yaml`\n"
+    "- **On the test set:** about 95 % of flagged emails were spam with both "
+    "versions (14 and 12 of 506 real emails flagged). The 95 % holds when about "
+    "40 % of the mail is spam, as in Spambase; with less spam it is lower\n"
     "- **English only:** the model's words are all English, so French spam "
     "almost always gets through\n"
     "- Same answers as `spamjam predict`\n"
@@ -98,6 +100,12 @@ FOOTER = (
     "emails. Fait avec soin par l'équipe IT de GrandPied."
 )
 ERROR_NO_MODEL = "No model at {path}. Run `spamjam train` first, then reload."
+LABEL_NO_DONOR = "Without the donor's words"
+HELP_NO_DONOR = (
+    "Spambase's real emails all come from one person, George at HP Labs, so "
+    "words like george or hp mean \"real email\" to the main model. This version "
+    "was trained without them. Try it on an email that starts with \"Hi George\"."
+)
 ERROR_BAD_INPUT = "Cannot predict: {error}"
 
 # Number of features shown in the "Pourquoi ?" chart.
@@ -159,7 +167,9 @@ def feature_contributions(model: Pipeline, features: dict) -> pd.Series:
     share of the decision. Positive means towards spam, negative towards ham.
     """
     row = features_to_row(features, list(model.feature_names_in_))
-    scaled = model["preprocess"].transform(row)[0]
+    # Every step but the model: the scaling, and removing the donor's words for
+    # the second version.
+    scaled = np.asarray(model[:-1].transform(row))[0]
     names = [
         name.split("__", 1)[1]   # drop the "capital__" / "other__" prefix
         for name in model["preprocess"].get_feature_names_out()
@@ -194,12 +204,16 @@ def why_chart(contributions: pd.Series) -> alt.Chart:
 
 
 @st.dialog(INFO_TITLE)
-def show_info(model_name: str, threshold: float) -> None:
+def show_info(config: dict) -> None:
     """Explain how the page works, in a dialog opened from the banner."""
-    st.markdown(INFO_TEXT.format(name=model_name, threshold=threshold))
+    st.markdown(INFO_TEXT.format(
+        name=config["model"]["name"],
+        threshold=version_settings(config)["threshold"],
+        threshold_no_donor=version_settings(config, True)["threshold"],
+    ))
 
 
-def banner(model_name: str, threshold: float) -> None:
+def banner(config: dict) -> None:
     """Show the green GrandPied banner, with an info button at the top right."""
     with st.container(key="hero", gap=None):
         kicker, info = st.columns([12, 1], vertical_alignment="center")
@@ -207,7 +221,7 @@ def banner(model_name: str, threshold: float) -> None:
                         unsafe_allow_html=True)
         if info.button("", icon=":material/info:", type="tertiary", key="info",
                        help=INFO_TITLE):
-            show_info(model_name, threshold)
+            show_info(config)
         st.markdown(f'<h1>{TITLE}</h1><div class="gp-tagline">{TAGLINE}</div>',
                     unsafe_allow_html=True)
 
@@ -249,22 +263,22 @@ def read_input(model: Pipeline, example_path: Path) -> dict:
 def main() -> None:
     """Draw the page: the email on the left, the verdict on the right."""
     config = load_config(CONFIG_PATH)
-    model_path = PROJECT_ROOT / config["model"]["path"]
-    threshold = config["model"]["threshold"]
 
     st.set_page_config(page_title=PAGE_TITLE, page_icon="👣", layout="wide")
     st.markdown(STYLE, unsafe_allow_html=True)
-    banner(config["model"]["name"], threshold)
-
-    if not model_path.exists():
-        st.error(ERROR_NO_MODEL.format(path=model_path))
-        st.stop()
-    model = load_model(model_path, CONFIG_PATH)
+    banner(config)
 
     left, right = st.columns(2, gap="large")
     with left:
         sticker(HELLO)
         st.write(INTRO)
+        without_donor_words = st.toggle(LABEL_NO_DONOR, help=HELP_NO_DONOR)
+        settings = version_settings(config, without_donor_words)
+        threshold = settings["threshold"]
+        if not settings["path"].exists():
+            st.error(ERROR_NO_MODEL.format(path=settings["path"]))
+            st.stop()
+        model = load_model(settings["path"], CONFIG_PATH)
         try:
             features = read_input(model, PROJECT_ROOT / config["app"]["example_path"])
             result = predict_email(model, features, threshold)

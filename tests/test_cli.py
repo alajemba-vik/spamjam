@@ -41,6 +41,9 @@ def trained(tmp_path_factory):
     config["data"]["train_path"] = str(folder / "train.csv")
     config["data"]["test_path"] = str(folder / "test.csv")
     config["model"]["path"] = str(folder / "model.joblib")
+    config["model"]["without_donor_words"]["path"] = str(
+        folder / "model_without_donor_words.joblib"
+    )
     config["grids"]["logistic_regression"] = {"model__C": [1]}
     config_path = folder / "config.yaml"
     config_path.write_text(yaml.safe_dump(config))
@@ -49,9 +52,10 @@ def trained(tmp_path_factory):
     return config_path, folder
 
 
-def test_train_saves_a_model(trained):
+def test_train_saves_both_versions(trained):
     config_path, folder = trained
     assert (folder / "model.joblib").exists()
+    assert (folder / "model_without_donor_words.joblib").exists()
 
 
 def test_evaluate_prints_the_test_metrics(trained, capsys):
@@ -61,6 +65,7 @@ def test_evaluate_prints_the_test_metrics(trained, capsys):
     for name in ["precision", "recall", "f1", "roc_auc", "average_precision"]:
         assert name in output
     assert "predicted spam" in output
+    assert "without the donor's words" in output
 
 
 def test_predict_prints_a_probability_and_a_label(trained, capsys):
@@ -86,6 +91,44 @@ def test_predict_reads_the_text_of_an_email(trained, capsys):
     result = json.loads(capsys.readouterr().out)
     assert 0 <= result["spam_probability"] <= 1
     assert result["is_spam"] in (0, 1)
+
+
+def test_predict_with_the_second_version(trained, capsys):
+    config_path, _ = trained
+    text_path = PROJECT_ROOT / "examples" / "new_email.txt"
+    capsys.readouterr()
+    main(["--config", str(config_path), "predict", "--text", str(text_path),
+          "--without-donor-words"])
+    result = json.loads(capsys.readouterr().out)
+    assert 0 <= result["spam_probability"] <= 1
+
+
+def test_predict_a_folder_of_emails(trained, tmp_path):
+    config_path, _ = trained
+    emails = tmp_path / "emails"
+    emails.mkdir()
+    (emails / "a.txt").write_text("Get FREE money today!!!", encoding="utf-8")
+    (emails / "b.txt").write_text("See you at the meeting.", encoding="utf-8")
+    output = tmp_path / "predictions.csv"
+    main(["--config", str(config_path), "predict", "--text", str(emails),
+          "--output", str(output)])
+    predictions = pd.read_csv(output)
+    assert predictions["email"].tolist() == ["a.txt", "b.txt"]
+    assert set(predictions["is_spam"]) <= {0, 1}
+
+
+def test_features_saves_a_dataset_in_the_spambase_format(trained, tmp_path):
+    config_path, _ = trained
+    for label in ["spam", "ham"]:
+        (tmp_path / "emails" / label).mkdir(parents=True)
+        (tmp_path / "emails" / label / "1.txt").write_text("hello", encoding="utf-8")
+    output = tmp_path / "dataset.csv"
+    main(["--config", str(config_path), "features", str(tmp_path / "emails"),
+          "--output", str(output)])
+    dataset = pd.read_csv(output)
+    real_columns = pd.read_csv(PROJECT_ROOT / load_config()["data"]["path"], nrows=1)
+    assert list(dataset.columns) == list(real_columns.columns)
+    assert len(dataset) == 2
 
 
 def test_predict_rejects_a_bad_input_file(trained, tmp_path):

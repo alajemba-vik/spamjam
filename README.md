@@ -1,5 +1,5 @@
 # spamjam
-SpamJam is a machine learning project for email spam detection, featuring reproducible data pipelines, model comparison, cost-aware classification, automated testing, and a Python command-line interface. To enable a more immersive learning experience, students have framed the problem around a fictional company GrandPied.
+SpamJam is a machine learning project for email spam detection, featuring reproducible data pipelines, model comparison, cost-aware classification, automated testing, a Python command-line interface and a Streamlit page. To enable a more immersive learning experience, students have framed the problem around a fictional company GrandPied.
 
 
 # Problem
@@ -30,6 +30,7 @@ We use the [Spambase dataset](https://archive.ics.uci.edu/dataset/94/spambase) f
 | Model selection | Average precision 0.954 in 5-fold cross-validation on the training set (dummy baseline: 0.399). Tuned k-NN and linear SVM are tied with it; we keep the simplest |
 | Decision threshold | 0.782, chosen on out-of-fold predictions to reach a precision of 0.95 on spam |
 | Test set (used once) | Precision 0.950, recall 0.795: 14 of 506 legitimate emails flagged as spam, 69 of 336 spam missed |
+| Second version, without the donor's words | Average precision 0.938 in cross-validation, threshold 0.82. Test set: precision 0.952, recall 0.711 (12 legitimate emails flagged, 97 spam missed). Same precision, but less spam caught, and it isn't fooled by an email that starts with "Hi George" |
 
 The full analysis is in `notebooks/analysis.ipynb`. These scores are likely optimistic for GrandPied (see the limitations below).
 
@@ -38,7 +39,7 @@ The full analysis is in `notebooks/analysis.ipynb`. These scores are likely opti
 
 The main ones:
 
-- **One donor:** all the real emails come from one person, so words like `george` and `hp` carry a lot of weight on Spambase but would mean nothing at GrandPied.
+- **One donor:** all the real emails come from one person, so words like `george` and `hp` carry a lot of weight on Spambase but would mean nothing at GrandPied. The second version, trained without them, shows what they are worth.
 - **English only:** the 48 word features are English words, so French spam almost always gets through.
 - **GrandPied's emails look like spam to it:** words a marketing company uses every day (`free`, `our`, `business`, `your`) push towards spam, so an ordinary email about a client order is flagged.
 - **The 95 % precision depends on the mix:** it holds when about 40 % of the mail is spam, as in Spambase. With 10 % spam it would be about 76 %, so the threshold would have to be chosen again on GrandPied's emails.
@@ -65,21 +66,24 @@ With [uv](https://docs.astral.sh/uv/), `uv run spamjam ...` and `uv run pytest` 
 
 # Usage
 
-Run the commands from the project folder (the one that contains `config.yaml`). Every setting (data paths, model, grid, threshold) comes from `config.yaml`; `--config other.yaml` uses another settings file.
+Run the commands from the project folder (the one that contains `config.yaml`). Every setting (data paths, model, grid, thresholds) comes from `config.yaml`; `--config other.yaml` uses another settings file.
 
-**Train** the model on the training set and save it to `models/spamjam.joblib`. On the first run, it also downloads the data if needed and creates the train/test split. Run this first: `evaluate`, `predict` and the Streamlit page all use the saved model, and the model is not stored in git.
+SpamJam trains two versions of the same model: one with all 57 features (the main one), and one without the donor's words (`george`, `hp`, ...; see `docs/limitations.md`). Each has its own threshold.
+
+**Train** both versions on the training set and save them in `models/`. On the first run, it also downloads the data if needed and creates the train/test split. Run this first: `evaluate`, `predict` and the Streamlit page all use the saved models, and the models are not stored in git.
 
 ```bash
 spamjam train
 ```
 
-**Evaluate** the saved model on the test set (scores and confusion matrix):
+**Evaluate** both saved versions on the test set (scores and confusion matrix). The main version's results:
 
 ```bash
 spamjam evaluate
 ```
 
 ```
+== Model with all features ==
 Test set: 842 emails, threshold 0.782
 
 precision            0.9502
@@ -104,7 +108,23 @@ spamjam predict --text examples/new_email.txt
 {"spam_probability": 0.9777, "is_spam": 1}
 ```
 
-The model only sees the 57 features, never the text itself. With `--input`, the JSON file gives each value with its feature name (every feature is described in `docs/data_dictionary.md`); a missing, unknown or non-numeric value is rejected with a clear message instead of being guessed. With `--text`, SpamJam computes the 57 values from the email the way the Spambase documentation describes. That documentation doesn't say whether the headers were counted, so these values are close to what Spambase would give, not guaranteed identical.
+Add `--without-donor-words` to use the second version.
+
+The model only sees the 57 features, never the text itself. With `--input`, the JSON file gives each value with its feature name (every feature is described in `docs/data_dictionary.md`); a missing, unknown or non-numeric value is rejected with a clear message instead of being guessed. With `--text`, SpamJam computes the 57 values from the email the way the Spambase documentation describes. That documentation doesn't say whether the headers were counted, so these values are close to what Spambase would give, not guaranteed identical. `--text` also takes an `.eml` file.
+
+**Predict many emails at once:** `--text` also takes a folder of `.txt`/`.eml` emails or an `.mbox` file (the format most mail apps export to). It prints one line per email, or saves them with `--output`:
+
+```bash
+spamjam predict --text my_emails/ --output predictions.csv
+```
+
+**Build a dataset from your own emails:** `spamjam features` computes the 57 features of every email and saves them in the Spambase format. Emails in a `spam/` or `ham/` folder (or `spam.mbox`, `ham.mbox`) get that label in an `is_spam` column:
+
+```bash
+spamjam features grandpied_emails/ --output data/raw/grandpied.csv
+```
+
+This is how GrandPied could retrain SpamJam on its own emails: in a copy of `config.yaml`, set `data.path` to that file and give new `train_path`/`test_path`, then run `spamjam --config grandpied.yaml train`. The thresholds would then have to be chosen again in `notebooks/analysis.ipynb` (section Decision threshold), since they depend on the data. Real filters go further and learn their words from each user's own emails; see the end of `docs/limitations.md`.
 
 
 **Try it in the browser** with the Streamlit page (run `spamjam train` first):
@@ -113,17 +133,17 @@ The model only sees the 57 features, never the text itself. With `--input`, the 
 streamlit run src/spamjam/app.py
 ```
 
-It opens a page where you either edit the feature values (the box starts with `examples/new_case.json`, so you can keep it, change some values or paste your own) or paste the text of an email. Next to it, it shows the spam probability, the decision at the threshold from `config.yaml`, and which features pushed the email towards spam or ham. It uses the same saved model and threshold as `spamjam predict`.
+It opens a page where you either edit the feature values (the box starts with `examples/new_case.json`, so you can keep it, change some values or paste your own) or paste the text of an email. Next to it, it shows the spam probability, the decision at the threshold from `config.yaml`, and which features pushed the email towards spam or ham. A switch picks the second version, without the donor's words. It uses the same saved models and thresholds as `spamjam predict`.
 
 
 # Tests and code quality
 
 ```bash
-pytest        # 53 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, command line, Streamlit page
+pytest        # 67 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
 ruff check .  # style (PEP 8), errors, import order, names and docstrings, notebooks included
 ```
 
-The tests that use the command line work on a small temporary split, so they never touch the real test set or your saved model.
+The tests that use the command line work on a small temporary split, so they never touch the real test set or your saved models.
 
 
 # Notebooks
@@ -137,20 +157,22 @@ Open them with the Jupyter kernel of the virtual environment. In `analysis.ipynb
 # Project structure
 
 ```
-config.yaml              all settings: paths, seed, CV, grids, final model, threshold
+config.yaml              all settings: paths, seed, CV, grids, final model, thresholds
 src/spamjam/
     data.py              DatasetLoader: download, remove duplicates, split
-    features.py          preprocessing pipeline (log transform, scaling)
+    features.py          preprocessing pipeline (log transform, scaling, dropping the donor's words)
     models.py            Trainer: tune with cross-validation, evaluate, save, load
     evaluate.py          metrics for a given threshold
     predict.py           prediction for one email read from JSON
     text.py              the 57 features computed from an email's text
+    emails.py            reading many emails: folders, .eml and .mbox files, labels
     cli.py               the `spamjam` command
     app.py               the Streamlit page
     config.py            reads config.yaml
     constants.py         project paths and labels
 tests/                   pytest tests
 notebooks/               data exploration and analysis
+results/                 charts saved by the notebooks, for the report and slides
 examples/                example inputs for `spamjam predict` (JSON and text)
 docs/data_dictionary.md  what every column of the dataset means
 docs/limitations.md      what SpamJam can't do, with the numbers behind it

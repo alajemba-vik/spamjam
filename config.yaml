@@ -38,6 +38,12 @@ model:
   # Lowest threshold that reaches target_precision on the out-of-fold
   # predictions (see "Decision threshold" in notebooks/analysis.ipynb).
   threshold: 0.782
+  # Second version: the same model trained without the donor's words
+  # (features.donor_columns), with its own threshold chosen the same way
+  # (see "Second version" in notebooks/analysis.ipynb).
+  without_donor_words:
+    path: models/spamjam_without_donor_words.joblib
+    threshold: 0.82
 
 # The Streamlit page (streamlit run src/spamjam/app.py).
 app:
@@ -45,8 +51,8 @@ app:
 
 features:
   # Words that describe the dataset's donor (George, at HP Labs) rather than spam.
-  # Used only for the comparison in notebooks/analysis.ipynb: we keep them in the
-  # model and report the dependence as a limitation (see the decision there).
+  # The main model keeps them; the second version (model.without_donor_words)
+  # is trained without them.
   donor_columns:
     - word_freq_george
     - word_freq_hp
@@ -58,5 +64,6 @@ features:
     - word_freq_telnet
     - word_freq_technology
 
+# Charts saved by the notebooks, for the report and the slides.
 output:
-  results_dir: "results"
+  results_dir: results

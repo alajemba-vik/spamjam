@@ -5,9 +5,9 @@ lists what it can't do, and why, with the numbers behind each point. It is the
 one place where these details live: the README, the notebook and the report
 link here.
 
-Unless said otherwise, the numbers come from the test set (842 emails,
-threshold 0.782) and are computed in `notebooks/analysis.ipynb`, section
-Limitations. The example emails can be checked with
+Unless said otherwise, the numbers are for the main model (all 57 features)
+on the test set (842 emails, threshold 0.782), and are computed in
+`notebooks/analysis.ipynb`, section Limitations. The example emails can be checked with
 `spamjam predict --text FILE` or on the Streamlit page.
 
 
@@ -21,10 +21,27 @@ strongest signals the model uses: `george` has the largest weight by far
 3 % of spam.
 
 These words help on Spambase only because they identify the donor's emails.
-Without them, cross-validation average precision drops from 0.954 to 0.938.
 At GrandPied they mean nothing, so our scores are likely optimistic. The UCI
 documentation itself says a general filter would have to "blind" these
 words or use real emails from many people.
+
+To measure this, we also train a second version of the model without them
+(`spamjam predict --without-donor-words`, and the switch on the Streamlit
+page):
+
+| | All features | Without the donor's words |
+|---|---|---|
+| CV average precision | 0.954 | 0.938 |
+| Threshold (for 0.95 precision) | 0.782 | 0.82 |
+| Test precision | 0.950 | 0.952 |
+| Test recall | 0.795 | 0.711 |
+| Real emails flagged (of 506) | 14 | 12 |
+| Spam missed (of 336) | 69 | 97 |
+
+Without the donor's words, the model keeps the same precision but catches
+less spam: that is roughly what the donor's words were worth on Spambase.
+It is still optimistic for GrandPied, because the other limitations below
+stay the same.
 
 The published results we compare with (UCI, Hastie, Tibshirani and Friedman,
 Shalizi at CMU) also train on all 57 features, so the comparison is fair, but
@@ -103,7 +120,10 @@ Since a few words carry a lot of weight, a spammer can push an email towards
 | Get FREE money today!!! Click here to claim your $500. | 100 % |
 | Hi George, Get FREE money today!!! Click here to claim your $500. | 0 % |
 
-Longer spam with many spam words resists this better: our example
+The second version, trained without the donor's words, isn't fooled by this
+one: it gives the "Hi George" spam 100 %. But a spammer could still use
+other words that point to a real email. Longer spam with many spam words
+resists this better: our example
 `examples/new_email.txt` stays at 100 % with "Hi George," added. Image-only
 spam, which has almost no text, would also get through.
 
@@ -156,7 +176,8 @@ spam. Short emails between two colleagues show it:
 
 On Spambase, these words mostly come from spam, because the donor worked in a
 research lab. At GrandPied, many real emails, including the ones to and from
-clients, would be flagged.
+clients, would be flagged. The second version doesn't fix this: it gives the
+"thanks for your order" email 94 %, above its threshold of 82 %.
 
 
 ## Risks of deploying it
@@ -178,8 +199,23 @@ clients, would be flagged.
 ## What it means for GrandPied
 
 Before real use, GrandPied would need to retrain the model on its own
-labelled emails (French and English, marketing included), choose the
+labelled emails (French and English, marketing included; `spamjam features`
+turns a folder of emails into a dataset, see the README), choose the
 threshold again on its own share of spam, send flagged emails to quarantine
 rather than delete them, and keep an eye on how many real emails get flagged.
 If clients say their emails went unanswered, the threshold should be raised
 so that fewer emails are flagged.
+
+Real spam filters go further: they are personal. SpamAssassin, a widely used
+open-source spam filter that companies run on their own mail servers, can
+keep a database per user, trained on that user's own sorted mail, and Gmail
+learns from what each user marks as spam or not spam. Nobody picks the
+words by hand: the filter takes every word from the emails and learns which
+ones matter. That is how a word like `george` ends up meaning "real email"
+for one person. Spambase can't do this, because its 48 words were chosen
+once, in 1999. For GrandPied, the industry-standard version of SpamJam would
+learn its words from GrandPied's emails (company and client names, French
+words) and be trained per team or per employee. With our 57 fixed features,
+the closest step is retraining on GrandPied's labelled emails with
+`spamjam features`; learning the words from the emails themselves would
+mean changing the features, which we haven't built.

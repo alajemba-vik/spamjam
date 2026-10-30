@@ -13,7 +13,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 
 from spamjam.config import load_config
-from spamjam.constants import CONFIG_PATH, SPAM
+from spamjam.constants import CONFIG_PATH, PROJECT_ROOT, SPAM
 from spamjam.evaluate import compute_metrics
 from spamjam.features import build_pipeline
 
@@ -35,6 +35,22 @@ def make_model(name: str, random_state: int) -> BaseEstimator:
     raise ValueError(f"Unknown model {name!r}.")
 
 
+def version_settings(config: dict, without_donor_words: bool = False) -> dict:
+    """Return where one version of the model is saved and its threshold.
+
+    The project trains two versions of the same model: one with all 57
+    features, and one without the donor's words (``features.donor_columns``),
+    see docs/limitations.md.
+    """
+    settings = config["model"]
+    if without_donor_words:
+        settings = settings["without_donor_words"]
+    return {
+        "path": PROJECT_ROOT / settings["path"],
+        "threshold": settings["threshold"],
+    }
+
+
 class Trainer:
     """Build the pipeline for one model, tune it, evaluate it, save and load it.
 
@@ -49,6 +65,7 @@ class Trainer:
         n_splits: int,
         scoring: str,
         random_state: int,
+        drop_columns: list[str] | None = None,
     ) -> None:
         """Store the settings of the training run.
 
@@ -59,20 +76,30 @@ class Trainer:
             n_splits: number of cross-validation folds.
             scoring: metric used to compare the settings.
             random_state: seed for the folds and the model.
+            drop_columns: columns the pipeline removes before training
+                (e.g. the donor's words). None keeps all the features.
         """
         self.model_name = model_name
         self.param_grid = param_grid
         self.n_splits = n_splits
         self.scoring = scoring
         self.random_state = random_state
+        self.drop_columns = drop_columns or []
         self.search = None  # the GridSearchCV, after train()
         self.model = None  # the best pipeline, after train() or load()
 
     @classmethod
     def from_config(
-        cls, model_name: str | None = None, config_path: Path = CONFIG_PATH
+        cls,
+        model_name: str | None = None,
+        config_path: Path = CONFIG_PATH,
+        without_donor_words: bool = False,
     ) -> "Trainer":
-        """Create a Trainer from config.yaml, by default for its ``model.name``."""
+        """Create a Trainer from config.yaml, by default for its ``model.name``.
+
+        With ``without_donor_words``, the model is trained without the donor's
+        words listed in ``features.donor_columns``.
+        """
         config = load_config(config_path)
         name = model_name or config["model"]["name"]
         if name not in config["grids"]:
@@ -83,6 +110,9 @@ class Trainer:
             n_splits=config["cv"]["n_splits"],
             scoring=config["cv"]["scoring"],
             random_state=config["random_state"],
+            drop_columns=(
+                config["features"]["donor_columns"] if without_donor_words else []
+            ),
         )
 
     def train(self, X: pd.DataFrame, y: pd.Series) -> Pipeline:
@@ -90,7 +120,9 @@ class Trainer:
 
         With an empty grid, this just scores the model's default settings.
         """
-        pipeline = build_pipeline(make_model(self.model_name, self.random_state))
+        pipeline = build_pipeline(
+            make_model(self.model_name, self.random_state), self.drop_columns
+        )
         cv = StratifiedKFold(
             n_splits=self.n_splits, shuffle=True, random_state=self.random_state
         )

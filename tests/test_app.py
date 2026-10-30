@@ -26,10 +26,12 @@ def test_parse_features_rejects_invalid_json():
         parse_features("not json")
 
 
-def test_contributions_add_up_to_the_model_score(train_test):
+@pytest.mark.parametrize("drop_columns", [None, ["word_freq_george", "word_freq_hp"]])
+def test_contributions_add_up_to_the_model_score(train_test, drop_columns):
     X_train, y_train, X_test, _ = train_test
     trainer = Trainer("logistic_regression", {}, n_splits=3,
-                      scoring="average_precision", random_state=0)
+                      scoring="average_precision", random_state=0,
+                      drop_columns=drop_columns)
     model = trainer.train(X_train, y_train)
     features = X_test.iloc[0].to_dict()
 
@@ -58,3 +60,11 @@ def test_page_predicts_a_pasted_email():
     check.click().run(timeout=30)
     assert not page.exception
     assert any("Spam probability" in bar.text for bar in page.get("progress"))
+
+
+def test_page_runs_with_the_second_version():
+    page = AppTest.from_file(APP_PATH)
+    page.run(timeout=30)
+    page.toggle[0].set_value(True).run(timeout=30)
+    assert not page.exception
+    assert any("82.0%" in bar.text for bar in page.get("progress"))   # its threshold
