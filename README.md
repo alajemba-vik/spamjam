@@ -139,11 +139,11 @@ It opens a page where you either edit the feature values (the box starts with `e
 # Tests and code quality
 
 ```bash
-pytest        # 68 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
+pytest        # 69 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
 ruff check .  # style (PEP 8), errors, import order, names and docstrings, notebooks included
 ```
 
-The tests that use the command line work on a small temporary split, so they never touch the real test set or your saved models.
+The tests that use the command line or the Streamlit page train their own small models on a temporary split, so they never touch the real test set or your saved models, and they work before `spamjam train` has been run.
 
 
 # Notebooks

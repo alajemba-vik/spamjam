@@ -4,9 +4,12 @@ import json
 
 import numpy as np
 import pytest
+import yaml
 from streamlit.testing.v1 import AppTest
 
+from spamjam import constants
 from spamjam.app import BUTTON_CHECK, feature_contributions, parse_features
+from spamjam.config import load_config
 from spamjam.constants import PROJECT_ROOT
 from spamjam.models import Trainer
 
@@ -44,15 +47,38 @@ def test_contributions_add_up_to_the_model_score(train_test, drop_columns):
 APP_PATH = str(PROJECT_ROOT / "src" / "spamjam" / "app.py")
 
 
-def test_page_runs_without_errors():
+@pytest.fixture
+def page(trained, monkeypatch):
+    """The Streamlit page, using the small models trained for the tests.
+
+    The page reads spamjam.constants.CONFIG_PATH each time it runs, so pointing
+    it to the temporary config makes it use those models, not models/.
+    """
+    config_path, _ = trained
+    monkeypatch.setattr(constants, "CONFIG_PATH", config_path)
+    page = AppTest.from_file(APP_PATH)
+    page.run(timeout=30)
+    return page
+
+
+def test_page_runs_without_errors(page):
+    assert not page.exception
+    assert any("Spam probability" in bar.text for bar in page.get("progress"))
+
+
+def test_page_without_a_model_says_to_train(tmp_path, monkeypatch):
+    config = load_config()
+    config["model"]["path"] = str(tmp_path / "no_model.joblib")
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(yaml.safe_dump(config))
+    monkeypatch.setattr(constants, "CONFIG_PATH", config_path)
     page = AppTest.from_file(APP_PATH)
     page.run(timeout=30)
     assert not page.exception
+    assert "spamjam train" in page.error[0].value
 
 
-def test_page_predicts_a_pasted_email():
-    page = AppTest.from_file(APP_PATH)
-    page.run(timeout=30)
+def test_page_predicts_a_pasted_email(page):
     page.radio[0].set_value("Paste an email").run(timeout=30)
     email = (PROJECT_ROOT / "examples" / "new_email.txt").read_text(encoding="utf-8")
     page.text_area[0].input(email)
@@ -62,9 +88,7 @@ def test_page_predicts_a_pasted_email():
     assert any("Spam probability" in bar.text for bar in page.get("progress"))
 
 
-def test_page_runs_with_the_second_version():
-    page = AppTest.from_file(APP_PATH)
-    page.run(timeout=30)
+def test_page_runs_with_the_second_version(page):
     page.toggle[0].set_value(True).run(timeout=30)
     assert not page.exception
     assert any("82.0%" in bar.text for bar in page.get("progress"))   # its threshold

@@ -5,51 +5,12 @@ import json
 import pandas as pd
 import pytest
 import yaml
-from sklearn.model_selection import train_test_split
 
 from spamjam.cli import main, show_metrics
 from spamjam.config import load_config
 from spamjam.constants import PROJECT_ROOT, TARGET_COL
 from spamjam.data import DatasetLoader
 from spamjam.evaluate import CONFUSION_MATRIX
-
-SAMPLE_SIZE = 600
-
-
-@pytest.fixture(scope="module")
-def trained(tmp_path_factory):
-    """A copy of config.yaml where everything happens in a temporary folder,
-    and a model trained with it.
-
-    The real test set must only be used once, at the end of the project, so
-    the tests use their own small train/test split from a sample of the data.
-    The grid is reduced to one value so training is fast.
-    """
-    config = load_config()
-    data_path = PROJECT_ROOT / config["data"]["path"]
-    if not data_path.exists():
-        pytest.skip("the dataset is missing")
-    folder = tmp_path_factory.mktemp("cli")
-
-    sample = pd.read_csv(data_path).sample(n=SAMPLE_SIZE, random_state=0)
-    train_df, test_df = train_test_split(
-        sample, test_size=0.2, stratify=sample[TARGET_COL], random_state=0
-    )
-    train_df.to_csv(folder / "train.csv", index=False)
-    test_df.to_csv(folder / "test.csv", index=False)
-
-    config["data"]["train_path"] = str(folder / "train.csv")
-    config["data"]["test_path"] = str(folder / "test.csv")
-    config["model"]["path"] = str(folder / "model.joblib")
-    config["model"]["without_donor_words"]["path"] = str(
-        folder / "model_without_donor_words.joblib"
-    )
-    config["grids"]["logistic_regression"] = {"model__C": [1]}
-    config_path = folder / "config.yaml"
-    config_path.write_text(yaml.safe_dump(config))
-
-    main(["--config", str(config_path), "train"])
-    return config_path, folder
 
 
 def test_train_saves_both_versions(trained):
@@ -139,8 +100,9 @@ def test_predict_rejects_a_bad_input_file(trained, tmp_path):
         main(["--config", str(config_path), "predict", "--input", str(input_path)])
 
 
-def test_evaluate_without_a_model_fails(tmp_path):
-    config = load_config()
+def test_evaluate_without_a_model_fails(trained, tmp_path):
+    # The temporary config, so the real data/processed split is never touched.
+    config = load_config(trained[0])
     config["model"]["path"] = str(tmp_path / "no_model.joblib")
     config_path = tmp_path / "config.yaml"
     config_path.write_text(yaml.safe_dump(config))
