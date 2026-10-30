@@ -25,13 +25,22 @@ import pandas as pd
 from spamjam.constants import HAM, SPAM, TARGET_COL
 from spamjam.text import features_from_text
 
-EMAIL_FILES = {".txt", ".eml"}
+TEXT_FILE = ".txt"
+EML_FILE = ".eml"
 MBOX_FILE = ".mbox"
 LABELS = {"ham": HAM, "spam": SPAM}
 HTML_TAG = re.compile(r"<[^>]+>")
 
-# Column with the file (or mbox position) each email comes from.
+# Columns of the table returned by read_emails(): where each email comes from
+# (file, or position in the mbox), and its text. The label is TARGET_COL.
 EMAIL_COL = "email"
+TEXT_COL = "text"
+
+# What we keep of an .eml or .mbox email: its subject and its body.
+EMAIL_TEXT = "Subject: {subject}\n\n{body}"
+
+ERROR_NOT_EMAILS = "{path} is not a folder of emails or an .mbox file"
+ERROR_NO_EMAILS = "No .txt, .eml or .mbox emails found in {path}"
 
 
 def message_text(message: EmailMessage) -> str:
@@ -40,7 +49,7 @@ def message_text(message: EmailMessage) -> str:
     text = body.get_content() if body is not None else ""
     if body is not None and body.get_content_type() == "text/html":
         text = HTML_TAG.sub(" ", text)
-    return f"Subject: {message['subject'] or ''}\n\n{text}"
+    return EMAIL_TEXT.format(subject=message["subject"] or "", body=text)
 
 
 def label_of(names: list[str]) -> int | None:
@@ -61,9 +70,9 @@ def read_emails(path: Path) -> pd.DataFrame:
             rows.append((f"{path.name}#{i}", message_text(parsed), label))
     elif path.is_dir():
         for file in sorted(path.rglob("*")):
-            if file.suffix == ".txt":
+            if file.suffix == TEXT_FILE:
                 text = file.read_text(encoding="utf-8", errors="replace")
-            elif file.suffix == ".eml":
+            elif file.suffix == EML_FILE:
                 text = message_text(
                     message_from_bytes(file.read_bytes(), policy=policy.default)
                 )
@@ -74,10 +83,10 @@ def read_emails(path: Path) -> pd.DataFrame:
             folders = file.relative_to(path).parent.parts
             rows.append((str(file.relative_to(path)), text, label_of(list(folders))))
     else:
-        raise ValueError(f"{path} is not a folder of emails or an .mbox file")
+        raise ValueError(ERROR_NOT_EMAILS.format(path=path))
     if not rows:
-        raise ValueError(f"No .txt, .eml or .mbox emails found in {path}")
-    return pd.DataFrame(rows, columns=[EMAIL_COL, "text", TARGET_COL])
+        raise ValueError(ERROR_NO_EMAILS.format(path=path))
+    return pd.DataFrame(rows, columns=[EMAIL_COL, TEXT_COL, TARGET_COL])
 
 
 def features_table(emails: pd.DataFrame, feature_names: list[str]) -> pd.DataFrame:
@@ -87,7 +96,7 @@ def features_table(emails: pd.DataFrame, feature_names: list[str]) -> pd.DataFra
     used as a dataset to train SpamJam (``data.path`` in config.yaml).
     """
     table = pd.DataFrame(
-        [features_from_text(text, feature_names) for text in emails["text"]],
+        [features_from_text(text, feature_names) for text in emails[TEXT_COL]],
         columns=feature_names,
     )
     if emails[TARGET_COL].notna().all():

@@ -16,9 +16,9 @@ what Spambase would give, not guaranteed identical.
 
 import re
 
-WORD_PREFIX = "word_freq_"
-CHAR_PREFIX = "char_freq_"
-CAPITAL_PREFIX = "capital_run_length_"
+from spamjam.constants import CAPITAL_PREFIX, CHAR_PREFIX, WORD_PREFIX
+
+ERROR_UNKNOWN_FEATURE = "Don't know how to compute {name} from text"
 
 WORD = re.compile(r"[A-Za-z0-9]+")
 CAPITAL_RUN = re.compile(r"[A-Z]+")
@@ -53,5 +53,5 @@ def features_from_text(text: str, feature_names: list[str]) -> dict:
         elif name.startswith(CAPITAL_PREFIX):
             features[name] = capitals[name.removeprefix(CAPITAL_PREFIX)]
         else:
-            raise ValueError(f"Don't know how to compute {name} from text")
+            raise ValueError(ERROR_UNKNOWN_FEATURE.format(name=name))
     return features

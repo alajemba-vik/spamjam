@@ -6,14 +6,16 @@ from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
 
+from spamjam.constants import CAPITAL_PREFIX
+
 # "^" means "starts with": picks every column whose name starts with
 # "capital_run_length_" (the 3 capital-letter counts).
-CAPITAL_PATTERN = r"^capital_run_length_"
+CAPITAL_PATTERN = rf"^{CAPITAL_PREFIX}"
 
 # "(?!...)" means "NOT followed by": picks every column that does NOT start with
 # "capital_run_length_", i.e. all the word and character frequencies.
 # With these patterns we never have to type a list of 57 column names.
-OTHER_PATTERN = r"^(?!capital_run_length_)"
+OTHER_PATTERN = rf"^(?!{CAPITAL_PREFIX})"
 
 
 def build_preprocessor() -> ColumnTransformer:

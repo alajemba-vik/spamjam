@@ -14,14 +14,19 @@ from spamjam.data import DatasetLoader
 TMP_DATA_FILE = "spambase.csv"
 TMP_TRAIN_FILE = "train.csv"
 TMP_TEST_FILE = "test.csv"
+TMP_CONFIG_FILE = "config.yaml"
+TMP_MODEL_FILE = "model.joblib"
+TMP_MODEL_NO_DONOR_FILE = "model_without_donor_words.joblib"
 
 # Use a random sample of 300 real emails instead of all say 4601, so the
 # tests run faster, and they check that our CODE works, which doesn't need all
 # the data
 SAMPLE_SIZE = 300
 SAMPLE_SEED = 0
-# Emails used to train the models of the command-line and Streamlit tests.
+# Emails used to train the models of the command-line and Streamlit tests,
+# with a one-value grid so training is fast.
 TRAINED_SAMPLE_SIZE = 600
+FAST_GRID = {"model__C": [1]}
 
 @pytest.fixture(scope="session")
 def real_df() -> pd.DataFrame:
@@ -85,17 +90,17 @@ def trained(tmp_path_factory):
     train_df, test_df = train_test_split(
         sample, test_size=0.2, stratify=sample[TARGET_COL], random_state=0
     )
-    train_df.to_csv(folder / "train.csv", index=False)
-    test_df.to_csv(folder / "test.csv", index=False)
+    train_df.to_csv(folder / TMP_TRAIN_FILE, index=False)
+    test_df.to_csv(folder / TMP_TEST_FILE, index=False)
 
-    config["data"]["train_path"] = str(folder / "train.csv")
-    config["data"]["test_path"] = str(folder / "test.csv")
-    config["model"]["path"] = str(folder / "model.joblib")
+    config["data"]["train_path"] = str(folder / TMP_TRAIN_FILE)
+    config["data"]["test_path"] = str(folder / TMP_TEST_FILE)
+    config["model"]["path"] = str(folder / TMP_MODEL_FILE)
     config["model"]["without_donor_words"]["path"] = str(
-        folder / "model_without_donor_words.joblib"
+        folder / TMP_MODEL_NO_DONOR_FILE
     )
-    config["grids"]["logistic_regression"] = {"model__C": [1]}
-    config_path = folder / "config.yaml"
+    config["grids"][config["model"]["name"]] = FAST_GRID
+    config_path = folder / TMP_CONFIG_FILE
     config_path.write_text(yaml.safe_dump(config))
 
     main(["--config", str(config_path), "train"])

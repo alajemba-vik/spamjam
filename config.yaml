@@ -45,9 +45,11 @@ model:
     path: models/spamjam_without_donor_words.joblib
     threshold: 0.82
 
-# The Streamlit page (streamlit run src/spamjam/app.py).
-app:
-  example_path: examples/new_case.json
+# Example inputs: one email's features (the Streamlit page starts with it) and
+# one email's text, for `spamjam predict --input` and `--text`.
+examples:
+  features: examples/new_case.json
+  text: examples/new_email.txt
 
 features:
   # Words that describe the dataset's donor (George, at HP Labs) rather than spam.

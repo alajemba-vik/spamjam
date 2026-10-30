@@ -32,3 +32,9 @@ CONFIG_PATH = PROJECT_ROOT / CONFIG_FILE
 TARGET_COL = "is_spam"
 HAM = 0
 SPAM = 1
+
+# How Spambase names its feature columns: word_freq_free, char_freq_$,
+# capital_run_length_total, ...
+WORD_PREFIX = "word_freq_"
+CHAR_PREFIX = "char_freq_"
+CAPITAL_PREFIX = "capital_run_length_"

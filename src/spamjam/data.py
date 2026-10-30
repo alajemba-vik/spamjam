@@ -12,6 +12,12 @@ from spamjam.config import load_config
 
 logger = logging.getLogger(__name__)
 
+# Progress messages, shown by the command line.
+MSG_READING = "Reading %s"
+MSG_DOWNLOADING = "Downloading UCI dataset %d"
+MSG_DUPLICATES = "Removed %d duplicate rows"
+MSG_SPLIT_SAVED = "Saved %s and %s"
+
 
 class DatasetLoader:
     """Load the dataset, remove duplicates and split it into train and test sets."""
@@ -52,10 +58,10 @@ class DatasetLoader:
     def load_data(self) -> pd.DataFrame:
         """Download the dataset, save on the first run and return it."""
         if self.data_path.exists():
-            logger.info("Reading %s", self.data_path)
+            logger.info(MSG_READING, self.data_path)
             return pd.read_csv(self.data_path)
 
-        logger.info("Downloading UCI dataset %d", self.uci_id)
+        logger.info(MSG_DOWNLOADING, self.uci_id)
         dataset = fetch_ucirepo(id=self.uci_id)
         df = dataset.data.features.copy()
         # Get all rows, first column
@@ -69,7 +75,7 @@ class DatasetLoader:
         """Return the data without duplicate rows,
         so no email can be in both train and test."""
         clean = df.drop_duplicates().reset_index(drop=True)
-        logger.info("Removed %d duplicate rows", len(df) - len(clean))
+        logger.info(MSG_DUPLICATES, len(df) - len(clean))
         return clean
 
     def save_split(self, train_df: pd.DataFrame, test_df: pd.DataFrame) -> None:
@@ -79,7 +85,7 @@ class DatasetLoader:
         train_df.to_csv(self.train_path, index=False)
         test_df.to_csv(self.test_path, index=False)
 
-        logger.info("Saved %s and %s", self.train_path, self.test_path)
+        logger.info(MSG_SPLIT_SAVED, self.train_path, self.test_path)
 
     def split(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Split the data into stratified train and test sets."""

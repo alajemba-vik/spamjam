@@ -139,7 +139,7 @@ It opens a page where you either edit the feature values (the box starts with `e
 # Tests and code quality
 
 ```bash
-pytest        # 69 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
+pytest        # 67 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
 ruff check .  # style (PEP 8), errors, import order, names and docstrings, notebooks included
 ```
 

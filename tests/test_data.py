@@ -5,10 +5,12 @@ import pytest
 
 from spamjam import constants
 
+SPAMBASE_SHAPE = (4601, 58)   # emails, columns (57 features + target), from UCI
+STRATIFY_TOLERANCE = 0.02     # how far the spam share may move after the split
 
 # ... as documented by UCI.
 def test_dataset_has_expected_shape(real_df):
-    assert real_df.shape == (4601, 58)
+    assert real_df.shape == SPAMBASE_SHAPE
     assert constants.TARGET_COL in real_df.columns
 
 # 0 (ham) and 1 (spam)
@@ -41,8 +43,12 @@ def test_no_test_row_in_train(loader, small_df):
 def test_split_is_stratified(loader, small_df):
     train, test = loader.split(small_df)
     spam_ratio = small_df[constants.TARGET_COL].mean()
-    assert train[constants.TARGET_COL].mean() == pytest.approx(spam_ratio, abs=0.02)
-    assert test[constants.TARGET_COL].mean() == pytest.approx(spam_ratio, abs=0.02)
+    assert train[constants.TARGET_COL].mean() == pytest.approx(
+        spam_ratio, abs=STRATIFY_TOLERANCE
+    )
+    assert test[constants.TARGET_COL].mean() == pytest.approx(
+        spam_ratio, abs=STRATIFY_TOLERANCE
+    )
 
 def test_split_is_reproducible(loader, small_df):
     train_a, _ = loader.split(small_df)
