@@ -5,14 +5,13 @@ import pytest
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import average_precision_score
 
+from spamjam.config import load_config
 from spamjam.constants import SPAM
 from spamjam.evaluate import CONFUSION_MATRIX, compute_metrics
 from spamjam.models import Trainer, make_model
-from spamjam.config import load_config
 
 SMALL_GRID = {"model__C": [0.1, 1.0]}
 MODEL_NAMES = ["logistic_regression", "knn", "linear_svm"]
-config=load_config()
 
 
 @pytest.fixture
@@ -118,16 +117,18 @@ def test_model_beats_dummy_baseline(trainer, train_test):
     dummy_ap = average_precision_score(y_test, dummy.predict_proba(X_test)[:, SPAM])
     assert model_ap > dummy_ap
 
+
 def test_evaluate_with_different_thresholds(trainer, train_test):
     X_train, y_train, X_test, y_test = train_test
     trainer.train(X_train, y_train)
 
     probas = trainer.model.predict_proba(X_test)[:, SPAM]
 
-    threshold_low = np.percentile(probas, 25)  # Lenient: accepts more spam
-    threshold_high = np.percentile(probas, 75) # Strict: only accepts highly probable spam
+    # Lenient threshold (flags more emails) and strict one (only very likely spam)
+    threshold_low = np.percentile(probas, 25)
+    threshold_high = np.percentile(probas, 75)
 
-    #Evaluate with both thresholds
+    # Evaluate with both thresholds
     metrics_low = trainer.evaluate(X_test, y_test, threshold=threshold_low)
     metrics_high = trainer.evaluate(X_test, y_test, threshold=threshold_high)
 
@@ -138,10 +139,9 @@ def test_evaluate_with_different_thresholds(trainer, train_test):
     tp_low, fp_low = cm_low[1, 1], cm_low[0, 1]
     tp_high, fp_high = cm_high[1, 1], cm_high[0, 1]
 
+    # A stricter threshold can only flag fewer emails, so it can never block
+    # more legitimate ones (false positives) or catch more spam (recall).
+    # (Precision usually goes up too, but that is not guaranteed.)
     assert (tp_high + fp_high) <= (tp_low + fp_low)
-
     assert fp_high <= fp_low
-
-    assert metrics_high["precision"] >= metrics_low["precision"]
-
     assert metrics_high["recall"] <= metrics_low["recall"]
