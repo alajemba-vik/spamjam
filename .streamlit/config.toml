@@ -1,0 +1,11 @@
+# GrandPied's colours for the Streamlit page (streamlit run src/spamjam/app.py).
+[theme]
+base = "light"
+primaryColor = "#B03A68"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#EAF3EC"
+textColor = "#1E2A24"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false

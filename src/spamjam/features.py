@@ -15,6 +15,7 @@ CAPITAL_PATTERN = r"^capital_run_length_"
 # With these patterns we never have to type a list of 57 column names.
 OTHER_PATTERN = r"^(?!capital_run_length_)"
 
+
 def build_preprocessor() -> ColumnTransformer:
     """Return the ColumnTransformer that scales every feature.
 
@@ -49,9 +50,24 @@ def build_preprocessor() -> ColumnTransformer:
 # THE FULL PIPELINE: ColumnTransformer -> model.
 # "model" is a parameter so we can plug in ANY model (logistic regression,
 #  k-NN, SVM) with exactly the same preparation: that makes the comparison fair.
-def build_pipeline(model: BaseEstimator) -> Pipeline:
-    """Return the full pipeline: preprocessing, then the model."""
-    return Pipeline([
+def build_pipeline(
+    model: BaseEstimator, drop_columns: list[str] | None = None
+) -> Pipeline:
+    """Return the full pipeline: preprocessing, then the model.
+
+    With ``drop_columns`` (e.g. the donor's words), the pipeline first removes
+    those columns. It still takes all 57 features as input, so a new email is
+    given the same way to both versions of the model.
+    """
+    steps = [
         ("preprocess", build_preprocessor()),
         ("model", model),
-    ])
+    ]
+    if drop_columns:
+        drop = ColumnTransformer(
+            [("drop", "drop", drop_columns)],
+            remainder="passthrough",
+            verbose_feature_names_out=False,   # keep the column names as they are
+        ).set_output(transform="pandas")       # the next step selects columns by name
+        steps.insert(0, ("drop", drop))
+    return Pipeline(steps)

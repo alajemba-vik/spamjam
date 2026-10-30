@@ -29,3 +29,14 @@ def test_scalers_are_fitted_on_train_only(train_test):
     cols = scaler.feature_names_in_
     assert np.allclose(scaler.mean_, np.log1p(X_train[cols]).mean())
     assert not np.allclose(scaler.mean_, np.log1p(all_rows[cols]).mean())
+
+
+def test_second_version_drops_the_donor_words_but_takes_all_features(train_test):
+    X_train, y_train, _, _ = train_test
+    donor = ["word_freq_george", "word_freq_hp"]
+    pipeline = build_pipeline(LogisticRegression(), drop_columns=donor)
+    pipeline.fit(X_train, y_train)
+    assert len(pipeline.feature_names_in_) == X_train.shape[1]   # all 57 in
+    used = pipeline["preprocess"].get_feature_names_out()
+    assert not any(name.endswith(tuple(donor)) for name in used)
+    assert len(used) == X_train.shape[1] - len(donor)
