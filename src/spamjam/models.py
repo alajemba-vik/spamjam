@@ -50,6 +50,16 @@ class Trainer:
         scoring: str,
         random_state: int,
     ) -> None:
+        """Store the settings of the training run.
+
+        Args:
+            model_name: model to build, as named in config.yaml.
+            param_grid: values to try for each hyperparameter, with pipeline
+                names (e.g. ``model__C``). An empty grid keeps the defaults.
+            n_splits: number of cross-validation folds.
+            scoring: metric used to compare the settings.
+            random_state: seed for the folds and the model.
+        """
         self.model_name = model_name
         self.param_grid = param_grid
         self.n_splits = n_splits
