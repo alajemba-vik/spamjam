@@ -21,8 +21,6 @@ We use the [Spambase dataset](https://archive.ics.uci.edu/dataset/94/spambase) f
 - They are split once into a training set (3,368 emails) and a test set (842 emails), stratified so both keep the same share of spam, with the seed from `config.yaml`. The split is saved in `data/processed/`, so the notebooks and the command line all use the same one.
 - Every column is described in the data dictionary: [`docs/data_dictionary.md`](docs/data_dictionary.md).
 
-**Limitation:** some features describe the dataset's donor rather than spam (e.g. `george`, `hp`, `650`). They help on Spambase but would not on GrandPied's emails, so our scores are likely optimistic for GrandPied. See `notebooks/analysis.ipynb` for the comparison with and without them.
-
 
 # Results
 
@@ -33,7 +31,19 @@ We use the [Spambase dataset](https://archive.ics.uci.edu/dataset/94/spambase) f
 | Decision threshold | 0.782, chosen on out-of-fold predictions to reach a precision of 0.95 on spam |
 | Test set (used once) | Precision 0.950, recall 0.795: 14 of 506 legitimate emails flagged as spam, 69 of 336 spam missed |
 
-The full analysis is in `notebooks/analysis.ipynb`. These scores are likely optimistic for GrandPied (see the limitation above).
+The full analysis is in `notebooks/analysis.ipynb`. These scores are likely optimistic for GrandPied (see the limitations below).
+
+
+# Limitations
+
+The main ones:
+
+- **One donor:** all the real emails come from one person, so words like `george` and `hp` carry a lot of weight on Spambase but would mean nothing at GrandPied.
+- **English only:** the 48 word features are English words, so French spam almost always gets through.
+- **GrandPied's emails look like spam to it:** words a marketing company uses every day (`free`, `our`, `business`, `your`) push towards spam, so an ordinary email about a client order is flagged.
+- **The 95 % precision depends on the mix:** it holds when about 40 % of the mail is spam, as in Spambase. With 10 % spam it would be about 76 %, so the threshold would have to be chosen again on GrandPied's emails.
+
+The full list, with the numbers and examples behind each point, is in [`docs/limitations.md`](docs/limitations.md).
 
 
 # Installation
@@ -48,7 +58,7 @@ source .venv/bin/activate          # on Windows: .venv\Scripts\activate
 pip install -e .                   # the package, the `spamjam` command and everything it needs
 ```
 
-This one command installs everything the project uses: the `spamjam` command, pytest, ruff and the Jupyter kernel for the notebooks. All versions are pinned in `pyproject.toml`.
+This one command installs everything the project uses: the `spamjam` command, the Streamlit page, pytest, ruff and the Jupyter kernel for the notebooks. All versions are pinned in `pyproject.toml`.
 
 With [uv](https://docs.astral.sh/uv/), `uv run spamjam ...` and `uv run pytest` work directly, without the steps above.
 
@@ -57,7 +67,7 @@ With [uv](https://docs.astral.sh/uv/), `uv run spamjam ...` and `uv run pytest` 
 
 Run the commands from the project folder (the one that contains `config.yaml`). Every setting (data paths, model, grid, threshold) comes from `config.yaml`; `--config other.yaml` uses another settings file.
 
-**Train** the model on the training set and save it to `models/spamjam.joblib`. On the first run, it also downloads the data if needed and creates the train/test split.
+**Train** the model on the training set and save it to `models/spamjam.joblib`. On the first run, it also downloads the data if needed and creates the train/test split. Run this first: `evaluate`, `predict` and the Streamlit page all use the saved model, and the model is not stored in git.
 
 ```bash
 spamjam train
@@ -83,23 +93,33 @@ actual ham             492              14
 actual spam             69             267
 ```
 
-**Predict** one new email from a JSON file with its 57 feature values (see `examples/new_case.json`):
+**Predict** one new email, either from its 57 feature values in a JSON file, or from its text:
 
 ```bash
 spamjam predict --input examples/new_case.json
+spamjam predict --text examples/new_email.txt
 ```
 
 ```
 {"spam_probability": 0.9777, "is_spam": 1}
 ```
 
-The model never sees the email's text, only its 57 features, so the input is those values, each with its feature name. A missing, unknown or non-numeric value is rejected with a clear message instead of being guessed.
+The model only sees the 57 features, never the text itself. With `--input`, the JSON file gives each value with its feature name (every feature is described in `docs/data_dictionary.md`); a missing, unknown or non-numeric value is rejected with a clear message instead of being guessed. With `--text`, SpamJam computes the 57 values from the email the way the Spambase documentation describes. That documentation doesn't say whether the headers were counted, so these values are close to what Spambase would give, not guaranteed identical.
+
+
+**Try it in the browser** with the Streamlit page (run `spamjam train` first):
+
+```bash
+streamlit run src/spamjam/app.py
+```
+
+It opens a page where you either edit the feature values (the box starts with `examples/new_case.json`, so you can keep it, change some values or paste your own) or paste the text of an email. Next to it, it shows the spam probability, the decision at the threshold from `config.yaml`, and which features pushed the email towards spam or ham. It uses the same saved model and threshold as `spamjam predict`.
 
 
 # Tests and code quality
 
 ```bash
-pytest        # 40 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, command line
+pytest        # 53 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, command line, Streamlit page
 ruff check .  # style (PEP 8), errors, import order, names and docstrings, notebooks included
 ```
 
@@ -124,13 +144,16 @@ src/spamjam/
     models.py            Trainer: tune with cross-validation, evaluate, save, load
     evaluate.py          metrics for a given threshold
     predict.py           prediction for one email read from JSON
+    text.py              the 57 features computed from an email's text
     cli.py               the `spamjam` command
+    app.py               the Streamlit page
     config.py            reads config.yaml
     constants.py         project paths and labels
 tests/                   pytest tests
 notebooks/               data exploration and analysis
-examples/new_case.json   example input for `spamjam predict`
+examples/                example inputs for `spamjam predict` (JSON and text)
 docs/data_dictionary.md  what every column of the dataset means
+docs/limitations.md      what SpamJam can't do, with the numbers behind it
 ```
 
 
