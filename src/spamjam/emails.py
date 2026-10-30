@@ -80,8 +80,10 @@ def read_emails(path: Path) -> pd.DataFrame:
                 continue
             # Only the folders inside `path` count, not the file's own name or
             # the folders above `path` (e.g. a "spam" project folder).
-            folders = file.relative_to(path).parent.parts
-            rows.append((str(file.relative_to(path)), text, label_of(list(folders))))
+            relative = file.relative_to(path)
+            folders = relative.parent.parts
+            # as_posix(): "ham/call.eml" with "/" on Windows too, not "ham\call.eml"
+            rows.append((relative.as_posix(), text, label_of(list(folders))))
     else:
         raise ValueError(ERROR_NOT_EMAILS.format(path=path))
     if not rows:
