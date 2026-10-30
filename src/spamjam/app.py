@@ -297,7 +297,7 @@ def main() -> None:
         sticker(WHY_HEADER)
         st.write(MSG_WHY)
         st.altair_chart(why_chart(feature_contributions(model, features)),
-                        use_container_width=True)
+                        width="stretch")
 
     st.markdown(f'<div class="gp-footer">{FOOTER}</div>', unsafe_allow_html=True)
 
