@@ -45,10 +45,10 @@ git clone https://github.com/alajemba-vik/spamjam.git
 cd spamjam
 python -m venv .venv
 source .venv/bin/activate          # on Windows: .venv\Scripts\activate
-pip install -e ".[dev]"            # the package, its dependencies and dev tools (ruff, Jupyter kernel)
+pip install -e .                   # the package, the `spamjam` command and everything it needs
 ```
 
-`pip install -e .` installs the package and the `spamjam` command. The `[dev]` extra adds ruff and the Jupyter kernel used by the notebooks. All versions are pinned in `pyproject.toml`.
+This one command installs everything the project uses: the `spamjam` command, pytest, ruff and the Jupyter kernel for the notebooks. All versions are pinned in `pyproject.toml`.
 
 With [uv](https://docs.astral.sh/uv/), `uv run spamjam ...` and `uv run pytest` work directly, without the steps above.
 

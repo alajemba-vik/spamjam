@@ -3,7 +3,11 @@ name = "spamjam"
 version = "0.1.0"
 description = "Spam detection for GrandPied"
 requires-python = ">=3.10"
+# Everything is installed with one `pip install -e .`: the notebooks (Jupyter
+# kernel), the tests (pytest) and the quality checks (ruff) are part of the
+# project, not optional extras.
 dependencies = [
+    "ipykernel==7.3.0",
     "joblib==1.6.0",
     "matplotlib==3.10.9",
     # No single numpy version supports both Python 3.10 and 3.14, so we pin one
@@ -13,6 +17,7 @@ dependencies = [
     "pandas==2.3.3",
     "pytest==8.4.2",
     "pyyaml==6.0.3",
+    "ruff==0.14.0",
     "scikit-learn==1.7.2",
     "ucimlrepo==0.0.7",
 ]
@@ -20,9 +25,6 @@ dependencies = [
 # Installs the `spamjam` command, which runs main() in cli.py.
 [project.scripts]
 spamjam = "spamjam.cli:main"
-
-[project.optional-dependencies]
-dev = ["ruff==0.14.0", "ipykernel==7.3.0"]
 
 [build-system]
 # Tool pip uses to build and install this package (not needed at runtime).
