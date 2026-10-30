@@ -53,3 +53,6 @@ features:
     - word_freq_labs
     - word_freq_telnet
     - word_freq_technology
+
+output:
+  results_dir: "results"
