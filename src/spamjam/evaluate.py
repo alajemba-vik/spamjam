@@ -12,7 +12,13 @@ from sklearn.metrics import (
 
 from spamjam.constants import HAM, SPAM
 
-# Name of the confusion matrix in the dictionary returned by compute_metrics().
+# Names of the metrics in the dictionary returned by compute_metrics().
+PRECISION = "precision"
+RECALL = "recall"
+F1 = "f1"
+ROC_AUC = "roc_auc"
+AVERAGE_PRECISION = "average_precision"
+SCORES = [PRECISION, RECALL, F1, ROC_AUC, AVERAGE_PRECISION]
 CONFUSION_MATRIX = "confusion_matrix"
 
 
@@ -29,11 +35,11 @@ def compute_metrics(
     return {
         # zero_division=0: if nothing is predicted as spam (e.g. a dummy model),
         # precision is 0 instead of a division-by-zero warning.
-        "precision": precision_score(y_true, y_pred, zero_division=0),
-        "recall": recall_score(y_true, y_pred, zero_division=0),
-        "f1": f1_score(y_true, y_pred, zero_division=0),
-        "roc_auc": roc_auc_score(y_true, spam_probability),
-        "average_precision": average_precision_score(y_true, spam_probability),
+        PRECISION: precision_score(y_true, y_pred, zero_division=0),
+        RECALL: recall_score(y_true, y_pred, zero_division=0),
+        F1: f1_score(y_true, y_pred, zero_division=0),
+        ROC_AUC: roc_auc_score(y_true, spam_probability),
+        AVERAGE_PRECISION: average_precision_score(y_true, spam_probability),
         # [[true ham, false spam], [missed spam, true spam]]
         CONFUSION_MATRIX: confusion_matrix(y_true, y_pred, labels=[HAM, SPAM]),
     }

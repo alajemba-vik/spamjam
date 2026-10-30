@@ -23,27 +23,40 @@ from pathlib import Path
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
-from spamjam.constants import HAM, SPAM
+from spamjam.constants import HAM, SPAM, TARGET_COL
+
+# Key of the spam probability in the result of predict_email(); the label is
+# under TARGET_COL ("is_spam"), as in the dataset.
+SPAM_PROBABILITY = "spam_probability"
+
+ERROR_NOT_OBJECT = "The input must be one JSON object: {feature: value, ...}."
+ERROR_MISSING = "Missing values for: {names}"
+ERROR_UNKNOWN = "Unknown features: {names}"
+ERROR_NOT_NUMBERS = "Values must be numbers: {names}"
+
+
+def parse_features(text: str) -> dict:
+    """Return one email's feature values from JSON text."""
+    features = json.loads(text)
+    if not isinstance(features, dict):
+        raise ValueError(ERROR_NOT_OBJECT)
+    return features
 
 
 def read_email_features(path: Path) -> dict:
     """Read one email's feature values from a JSON file."""
-    with open(path, encoding="utf-8") as f:
-        features = json.load(f)
-    if not isinstance(features, dict):
-        raise ValueError("The input must be one JSON object: {feature: value, ...}.")
-    return features
+    return parse_features(path.read_text(encoding="utf-8"))
 
 
 def features_to_row(features: dict, feature_names: list[str]) -> pd.DataFrame:
     """Check one email's feature values and return them as a one-row table."""
     missing = [name for name in feature_names if name not in features]
     if missing:
-        raise ValueError(f"Missing values for: {', '.join(missing)}")
+        raise ValueError(ERROR_MISSING.format(names=", ".join(missing)))
 
     unknown = [name for name in features if name not in feature_names]
     if unknown:
-        raise ValueError(f"Unknown features: {', '.join(unknown)}")
+        raise ValueError(ERROR_UNKNOWN.format(names=", ".join(unknown)))
 
     not_numbers = [
         name
@@ -52,7 +65,7 @@ def features_to_row(features: dict, feature_names: list[str]) -> pd.DataFrame:
         or not math.isfinite(features[name])
     ]
     if not_numbers:
-        raise ValueError(f"Values must be numbers: {', '.join(not_numbers)}")
+        raise ValueError(ERROR_NOT_NUMBERS.format(names=", ".join(not_numbers)))
 
     # Same columns, in the same order, as the data the model was trained on.
     return pd.DataFrame([features], columns=feature_names)
@@ -63,6 +76,6 @@ def predict_email(model: Pipeline, features: dict, threshold: float) -> dict:
     row = features_to_row(features, list(model.feature_names_in_))
     spam_probability = model.predict_proba(row)[0, SPAM]  # first row, spam column
     return {
-        "spam_probability": float(spam_probability),
-        "is_spam": SPAM if spam_probability >= threshold else HAM,
+        SPAM_PROBABILITY: float(spam_probability),
+        TARGET_COL: SPAM if spam_probability >= threshold else HAM,
     }

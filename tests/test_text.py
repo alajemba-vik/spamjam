@@ -2,7 +2,10 @@
 
 import pytest
 
-from spamjam.text import features_from_text
+from spamjam.constants import WORD_PREFIX
+from spamjam.text import ERROR_UNKNOWN_FEATURE, features_from_text
+
+SPAMBASE_WORDS = 48   # word features in Spambase
 
 
 def test_word_frequency_is_a_percentage_of_the_words():
@@ -41,11 +44,11 @@ def test_windows_line_endings_give_the_same_values():
 def test_a_french_email_matches_no_word_feature(real_df):
     # The 48 word features are English words, so the model can't read French
     # (see docs/limitations.md). If this fails, update that file.
-    word_features = [name for name in real_df.columns if name.startswith("word_freq_")]
+    word_features = [name for name in real_df.columns if name.startswith(WORD_PREFIX)]
     french_spam = ("Gagnez de l'argent GRATUIT aujourd'hui !!! "
                    "Cliquez ici pour recevoir vos 500 euros.")
     features = features_from_text(french_spam, word_features)
-    assert len(word_features) == 48
+    assert len(word_features) == SPAMBASE_WORDS
     assert set(features.values()) == {0}
 
 
@@ -56,5 +59,6 @@ def test_empty_email_gives_zeros():
 
 
 def test_unknown_feature_is_rejected():
-    with pytest.raises(ValueError, match="word_count"):
+    error = ERROR_UNKNOWN_FEATURE.format(name="word_count")
+    with pytest.raises(ValueError, match=error):
         features_from_text("hello", ["word_count"])

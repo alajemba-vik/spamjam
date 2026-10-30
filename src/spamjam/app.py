@@ -6,7 +6,6 @@ It uses the model saved by `spamjam train` and the threshold from config.yaml,
 so it gives the same answers as `spamjam predict`.
 """
 
-import json
 from pathlib import Path
 
 import altair as alt
@@ -16,9 +15,14 @@ import streamlit as st
 from sklearn.pipeline import Pipeline
 
 from spamjam.config import load_config
-from spamjam.constants import CONFIG_PATH, PROJECT_ROOT, SPAM
+from spamjam.constants import CONFIG_PATH, PROJECT_ROOT, SPAM, TARGET_COL
 from spamjam.models import Trainer, version_settings
-from spamjam.predict import features_to_row, predict_email
+from spamjam.predict import (
+    SPAM_PROBABILITY,
+    features_to_row,
+    parse_features,
+    predict_email,
+)
 from spamjam.text import features_from_text
 
 # GrandPied's colours (the same as in .streamlit/config.toml and the slides).
@@ -151,14 +155,6 @@ html, body, [class*="css"], .stMarkdown, .stRadio, .stCaption {{
 """
 
 
-def parse_features(text: str) -> dict:
-    """Return one email's feature values from JSON text."""
-    features = json.loads(text)
-    if not isinstance(features, dict):
-        raise ValueError("The input must be one JSON object: {feature: value, ...}.")
-    return features
-
-
 def feature_contributions(model: Pipeline, features: dict) -> pd.Series:
     """Return how much each feature pushes this email towards spam.
 
@@ -280,7 +276,8 @@ def main() -> None:
             st.stop()
         model = load_model(settings["path"], CONFIG_PATH)
         try:
-            features = read_input(model, PROJECT_ROOT / config["app"]["example_path"])
+            example_path = PROJECT_ROOT / config["examples"]["features"]
+            features = read_input(model, example_path)
             result = predict_email(model, features, threshold)
         except ValueError as error:
             st.error(ERROR_BAD_INPUT.format(error=error))
@@ -288,13 +285,13 @@ def main() -> None:
 
     with right:
         sticker(VERDICT_HEADER)
-        is_spam = result["is_spam"] == SPAM
+        is_spam = result[TARGET_COL] == SPAM
         title, text = VERDICT_SPAM if is_spam else VERDICT_HAM
         style = "gp-spam" if is_spam else "gp-ham"
         st.markdown(f'<div class="gp-verdict {style}"><h3>{title}</h3>{text}</div>',
                     unsafe_allow_html=True)
-        st.progress(result["spam_probability"], text=MSG_PROBABILITY.format(
-            probability=result["spam_probability"], threshold=threshold))
+        st.progress(result[SPAM_PROBABILITY], text=MSG_PROBABILITY.format(
+            probability=result[SPAM_PROBABILITY], threshold=threshold))
         st.caption(MSG_EXPLANATION.format(threshold=threshold))
 
         sticker(WHY_HEADER)

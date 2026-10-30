@@ -19,20 +19,32 @@ from spamjam.features import build_pipeline
 
 logger = logging.getLogger(__name__)
 
+# The models we compare, as named in config.yaml (grids, model.name).
+LOGISTIC_REGRESSION = "logistic_regression"
+KNN = "knn"
+LINEAR_SVM = "linear_svm"
+MODEL_NAMES = [LOGISTIC_REGRESSION, KNN, LINEAR_SVM]
+
+MSG_BEST_PARAMETERS = "Best parameters: %s"
+ERROR_UNKNOWN_MODEL = "Unknown model {name!r}."
+ERROR_NO_GRID = "No grid for {name!r} in config.yaml."
+ERROR_NOT_TRAINED = "Train or load a model before evaluating it."
+ERROR_NOTHING_TO_SAVE = "Train a model before saving it."
+
 
 def make_model(name: str, random_state: int) -> BaseEstimator:
     """Return a new, untrained model from its name in config.yaml."""
-    if name == "logistic_regression":
+    if name == LOGISTIC_REGRESSION:
         # liblinear supports both L1 and L2, which our grid compares.
         return LogisticRegression(solver="liblinear", random_state=random_state)
-    if name == "knn":
+    if name == KNN:
         return KNeighborsClassifier()
-    if name == "linear_svm":
+    if name == LINEAR_SVM:
         # SVC with a linear kernel rather than LinearSVC, because LinearSVC
         # can't give probabilities. probability=True adds them; our metrics
         # and predictions need the probability of spam.
         return SVC(kernel="linear", probability=True, random_state=random_state)
-    raise ValueError(f"Unknown model {name!r}.")
+    raise ValueError(ERROR_UNKNOWN_MODEL.format(name=name))
 
 
 def version_settings(config: dict, without_donor_words: bool = False) -> dict:
@@ -103,7 +115,7 @@ class Trainer:
         config = load_config(config_path)
         name = model_name or config["model"]["name"]
         if name not in config["grids"]:
-            raise ValueError(f"No grid for {name!r} in config.yaml.")
+            raise ValueError(ERROR_NO_GRID.format(name=name))
         return cls(
             model_name=name,
             param_grid=config["grids"][name],
@@ -132,13 +144,13 @@ class Trainer:
         )
         self.search.fit(X, y)
         self.model = self.search.best_estimator_
-        logger.info("Best parameters: %s", self.search.best_params_)
+        logger.info(MSG_BEST_PARAMETERS, self.search.best_params_)
         return self.model
 
     def evaluate(self, X: pd.DataFrame, y: pd.Series, threshold: float) -> dict:
         """Return the metrics of the trained (or loaded) model on X and y."""
         if self.model is None:
-            raise RuntimeError("Train or load a model before evaluating it.")
+            raise RuntimeError(ERROR_NOT_TRAINED)
         # predict_proba has one column per label (HAM, SPAM); keep the spam one.
         spam_probability = self.model.predict_proba(X)[:, SPAM]
         return compute_metrics(y, spam_probability, threshold)
@@ -146,7 +158,7 @@ class Trainer:
     def save(self, path: Path) -> None:
         """Save the trained model to ``path`` with joblib."""
         if self.model is None:
-            raise RuntimeError("Train a model before saving it.")
+            raise RuntimeError(ERROR_NOTHING_TO_SAVE)
         path.parent.mkdir(parents=True, exist_ok=True)
         joblib.dump(self.model, path)
 

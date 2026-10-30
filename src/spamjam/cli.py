@@ -26,10 +26,17 @@ import pandas as pd
 from spamjam.config import load_config
 from spamjam.constants import CONFIG_PATH, SPAM, TARGET_COL
 from spamjam.data import DatasetLoader
-from spamjam.emails import EMAIL_COL, features_table, message_text, read_emails
+from spamjam.emails import (
+    EMAIL_COL,
+    EML_FILE,
+    MBOX_FILE,
+    features_table,
+    message_text,
+    read_emails,
+)
 from spamjam.evaluate import CONFUSION_MATRIX
 from spamjam.models import Trainer, version_settings
-from spamjam.predict import predict_email, read_email_features
+from spamjam.predict import SPAM_PROBABILITY, predict_email, read_email_features
 from spamjam.text import features_from_text
 
 # Commands, as typed after `spamjam`.
@@ -123,7 +130,7 @@ def show_metrics(metrics: dict) -> None:
 
 def read_email_text(path: Path) -> str:
     """Return the text of one email file (.eml files without their headers)."""
-    if path.suffix == ".eml":
+    if path.suffix == EML_FILE:
         message = message_from_bytes(path.read_bytes(), policy=policy.default)
         return message_text(message)
     return path.read_text(encoding="utf-8")
@@ -182,7 +189,7 @@ def predict(args: argparse.Namespace, config_path: Path) -> None:
     load_trained_model(trainer, settings["path"])
     names = list(trainer.model.feature_names_in_)
 
-    if args.text is not None and (args.text.is_dir() or args.text.suffix == ".mbox"):
+    if args.text is not None and (args.text.is_dir() or args.text.suffix == MBOX_FILE):
         try:
             emails = read_emails(args.text)
         except (OSError, ValueError) as error:
@@ -191,8 +198,8 @@ def predict(args: argparse.Namespace, config_path: Path) -> None:
         probabilities = trainer.model.predict_proba(table)
         results = pd.DataFrame({
             EMAIL_COL: emails[EMAIL_COL],
-            "spam_probability": probabilities[:, SPAM].round(DECIMALS),
-            "is_spam": (probabilities[:, SPAM] >= settings["threshold"]).astype(int),
+            SPAM_PROBABILITY: probabilities[:, SPAM].round(DECIMALS),
+            TARGET_COL: (probabilities[:, SPAM] >= settings["threshold"]).astype(int),
         })
         if args.output:
             results.to_csv(args.output, index=False)
@@ -209,7 +216,7 @@ def predict(args: argparse.Namespace, config_path: Path) -> None:
         result = predict_email(trainer.model, features, settings["threshold"])
     except (OSError, ValueError) as error:
         sys.exit(ERROR_CANNOT_PREDICT.format(error=error))
-    result["spam_probability"] = round(result["spam_probability"], DECIMALS)
+    result[SPAM_PROBABILITY] = round(result[SPAM_PROBABILITY], DECIMALS)
     print(json.dumps(result))
 
 

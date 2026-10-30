@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
+from spamjam.config import load_config
 from spamjam.features import build_pipeline
 
 
@@ -33,7 +34,7 @@ def test_scalers_are_fitted_on_train_only(train_test):
 
 def test_second_version_drops_the_donor_words_but_takes_all_features(train_test):
     X_train, y_train, _, _ = train_test
-    donor = ["word_freq_george", "word_freq_hp"]
+    donor = load_config()["features"]["donor_columns"]
     pipeline = build_pipeline(LogisticRegression(), drop_columns=donor)
     pipeline.fit(X_train, y_train)
     assert len(pipeline.feature_names_in_) == X_train.shape[1]   # all 57 in

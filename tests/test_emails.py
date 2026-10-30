@@ -1,12 +1,19 @@
 """Tests for reading many emails: folders, .eml files, .mbox files and labels."""
 
 import mailbox
+import re
 from email.message import EmailMessage
 
 import pytest
 
 from spamjam.constants import HAM, SPAM, TARGET_COL
-from spamjam.emails import EMAIL_COL, features_table, read_emails
+from spamjam.emails import (
+    EMAIL_COL,
+    ERROR_NO_EMAILS,
+    TEXT_COL,
+    features_table,
+    read_emails,
+)
 
 SPAM_TEXT = "Get FREE money today!!! Click here to claim your $500."
 HAM_TEXT = "Hi Claire, can we move tomorrow's call with the client to 3 pm?"
@@ -38,7 +45,7 @@ def test_folders_give_the_labels(labelled_folder):
 
 def test_eml_keeps_the_subject_and_body_but_not_the_headers(labelled_folder):
     emails = read_emails(labelled_folder)
-    text = emails.loc[emails[EMAIL_COL] == "ham/call.eml", "text"].item()
+    text = emails.loc[emails[EMAIL_COL] == "ham/call.eml", TEXT_COL].item()
     assert "Subject: Call" in text and HAM_TEXT in text
     assert "someone@example.com" not in text
 
@@ -75,5 +82,6 @@ def test_only_folders_inside_the_given_one_give_labels(tmp_path):
 
 
 def test_a_folder_without_emails_is_rejected(tmp_path):
-    with pytest.raises(ValueError, match="No .txt"):
+    error = ERROR_NO_EMAILS.format(path=tmp_path)
+    with pytest.raises(ValueError, match=re.escape(error)):
         read_emails(tmp_path)
