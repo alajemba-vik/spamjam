@@ -2,7 +2,7 @@
 name = "spamjam"
 version = "0.1.0"
 description = "Spam detection for GrandPied"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 # Everything is installed with one `pip install -e .`: the notebooks (Jupyter
 # kernel), the tests (pytest), the quality checks (ruff) and the Streamlit page
 # are part of the project, not optional extras.
