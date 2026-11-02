@@ -30,15 +30,15 @@ def build_preprocessor() -> ColumnTransformer:
     capital_pipeline = Pipeline([
         # Let's log-transform the capital-letter counts.
         # These counts are very skewed: one email has a run of 9,989 capitals
-        # while 99% are under 669. The log squeezes big values
+        # while 99% have 669 or fewer. The log squeezes big values
         # (9,989 -> 9.2, 669 -> 6.5) so a few extreme emails don't dominate.
         # "1 +" because log(0) is undefined. feature_names_out keeps the column
         # names, so we can still label the model's weights later.
         ("log", FunctionTransformer(np.log1p, feature_names_out="one-to-one")),
         ("scale", StandardScaler()),
     ])
-    # No log for the other features: these are percentages with a limited range,
-    # so they don't need it.
+    # No log for the other features: they are percentages between 0 and 100,
+    # while the capital-letter counts can reach thousands.
     other_pipeline = Pipeline([
         ("scale", StandardScaler()),
     ])

@@ -29,7 +29,8 @@ grids:
     # Regularisation strength, as for logistic regression.
     model__C: [0.01, 0.1, 1, 10, 100]
 
-# The model trained by the CLI, where it is saved, and the decision threshold.
+# The model trained by the CLI, where it is saved, and its decision threshold
+# (and the same for its second version, below).
 model:
   name: logistic_regression
   path: models/spamjam.joblib

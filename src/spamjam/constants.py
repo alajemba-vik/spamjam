@@ -1,4 +1,4 @@
-"""Fixed facts used across the package: project paths and the target labels."""
+"""Fixed facts used across the package: paths, target labels and column names."""
 
 from pathlib import Path
 

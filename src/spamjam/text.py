@@ -12,6 +12,10 @@ It doesn't say whether the email headers were counted, whether words were
 matched ignoring case (we do, since the 48 words are lowercase), or exactly
 what counts as a character, so the values for a pasted email are close to
 what Spambase would give, not guaranteed identical.
+
+Letters and capitals are the English ones, A to Z, like Spambase's 48 English
+words: an accented letter such as "é" ends a word, and "É" isn't counted as a
+capital (see docs/limitations.md, point 2).
 """
 
 import re

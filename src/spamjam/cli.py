@@ -71,7 +71,9 @@ HELP_EMAILS = (
     "folder of .txt/.eml emails, or an .mbox file; emails in a spam/ or ham/ "
     "folder (or spam.mbox, ham.mbox) get that label"
 )
-HELP_OUTPUT_PREDICT = "save the predictions of many emails to this CSV file"
+HELP_OUTPUT_PREDICT = (
+    "save the predictions to this CSV file (only with a folder or an .mbox file)"
+)
 HELP_OUTPUT_FEATURES = "CSV file to save the features to"
 
 # Messages printed by the commands.
@@ -79,7 +81,7 @@ MSG_VERSION = "== {version} =="
 MSG_CV_SCORE = "CV {scoring}: {score:.4f}"
 MSG_MODEL_SAVED = "Model saved to {path}"
 MSG_TEST_SET = "Test set: {n_emails} emails, threshold {threshold}"
-MSG_SAVED = "Saved {n_emails} emails to {path}"
+MSG_SAVED = "Saved {n_emails} email(s) to {path}"
 MSG_NO_LABELS = (
     "Not every email is in a spam/ or ham/ folder, so the file has no is_spam column."
 )
@@ -97,6 +99,10 @@ ERROR_NO_CONFIG = (
 ERROR_NO_MODEL = "No model at {path}. Run `spamjam train` first."
 ERROR_CANNOT_PREDICT = "Cannot predict: {error}"
 ERROR_CANNOT_READ = "Cannot read the emails: {error}"
+ERROR_OUTPUT_ONE_EMAIL = (
+    "--output saves the predictions of many emails; give --text a folder or an "
+    ".mbox file, or leave out --output to print the prediction of one email."
+)
 
 # Decimals shown for scores and probabilities.
 DECIMALS = 4
@@ -189,7 +195,13 @@ def predict(args: argparse.Namespace, config_path: Path) -> None:
     load_trained_model(trainer, settings["path"])
     names = list(trainer.model.feature_names_in_)
 
-    if args.text is not None and (args.text.is_dir() or args.text.suffix == MBOX_FILE):
+    many_emails = args.text is not None and (
+        args.text.is_dir() or args.text.suffix == MBOX_FILE
+    )
+    if args.output and not many_emails:
+        sys.exit(ERROR_OUTPUT_ONE_EMAIL)
+
+    if many_emails:
         try:
             emails = read_emails(args.text)
         except (OSError, ValueError) as error:
@@ -202,6 +214,7 @@ def predict(args: argparse.Namespace, config_path: Path) -> None:
             TARGET_COL: (probabilities[:, SPAM] >= settings["threshold"]).astype(int),
         })
         if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
             results.to_csv(args.output, index=False)
             print(MSG_SAVED.format(n_emails=len(results), path=args.output))
         else:

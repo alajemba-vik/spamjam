@@ -2,6 +2,7 @@
 
 import mailbox
 import re
+from email import message_from_bytes, policy
 from email.message import EmailMessage
 
 import pytest
@@ -12,6 +13,7 @@ from spamjam.emails import (
     ERROR_NO_EMAILS,
     TEXT_COL,
     features_table,
+    message_text,
     read_emails,
 )
 
@@ -48,6 +50,15 @@ def test_eml_keeps_the_subject_and_body_but_not_the_headers(labelled_folder):
     text = emails.loc[emails[EMAIL_COL] == "ham/call.eml", TEXT_COL].item()
     assert "Subject: Call" in text and HAM_TEXT in text
     assert "someone@example.com" not in text
+
+
+def test_html_email_keeps_the_text_without_tags_or_entities():
+    message = EmailMessage()
+    message["Subject"] = "Offer"
+    message.set_content("<p>FREE &amp; easy</p>", subtype="html")
+    parsed = message_from_bytes(message.as_bytes(), policy=policy.default)
+    text = message_text(parsed)
+    assert "FREE & easy" in text and "<p>" not in text
 
 
 def test_mbox_named_spam_is_labelled_spam(tmp_path):

@@ -58,10 +58,12 @@ def features_to_row(features: dict, feature_names: list[str]) -> pd.DataFrame:
     if unknown:
         raise ValueError(ERROR_UNKNOWN.format(names=", ".join(unknown)))
 
+    # bool is excluded on purpose: in Python, True counts as the number 1.
     not_numbers = [
         name
         for name in feature_names
-        if not isinstance(features[name], (int, float))
+        if isinstance(features[name], bool)
+        or not isinstance(features[name], (int, float))
         or not math.isfinite(features[name])
     ]
     if not_numbers:

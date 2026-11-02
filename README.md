@@ -112,7 +112,7 @@ Add `--without-donor-words` to use the second version.
 
 The model only sees the 57 features, never the text itself. With `--input`, the JSON file gives each value with its feature name (every feature is described in `docs/data_dictionary.md`); a missing, unknown or non-numeric value is rejected with a clear message instead of being guessed. With `--text`, SpamJam computes the 57 values from the email the way the Spambase documentation describes. That documentation doesn't say whether the headers were counted, so these values are close to what Spambase would give, not guaranteed identical. `--text` also takes an `.eml` file.
 
-**Predict many emails at once:** `--text` also takes a folder of `.txt`/`.eml` emails or an `.mbox` file (the format most mail apps export to). It prints one line per email, or saves them with `--output`:
+**Predict many emails at once:** `--text` also takes a folder of `.txt`/`.eml` emails or an `.mbox` file (a format many mail apps, such as Gmail and Thunderbird, export to). It prints one line per email, or saves them with `--output`:
 
 ```bash
 spamjam predict --text my_emails/ --output predictions.csv
@@ -139,7 +139,7 @@ It opens a page where you either edit the feature values (the box starts with `e
 # Tests and code quality
 
 ```bash
-pytest        # 67 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
+pytest        # 70 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
 ruff check .  # style (PEP 8), errors, import order, names and docstrings, notebooks included
 ```
 
@@ -149,7 +149,7 @@ The tests that use the command line or the Streamlit page train their own small 
 # Notebooks
 
 1. `notebooks/data_exploration.ipynb`: the data, its quality, duplicates, skewed features, donor words, and the train/test split.
-2. `notebooks/analysis.ipynb`: model selection with cross-validation, the decision threshold, the one-time test set evaluation, and the interpretation.
+2. `notebooks/analysis.ipynb`: model selection with cross-validation, the decision threshold, the second version without the donor's words, the one-time test set evaluation, and the interpretation and limitations.
 
 Open them with the Jupyter kernel of the virtual environment. In `analysis.ipynb`, the cell that tunes all models takes a few minutes (mostly the linear SVM); it prints its progress.
 
@@ -169,7 +169,7 @@ src/spamjam/
     cli.py               the `spamjam` command
     app.py               the Streamlit page
     config.py            reads config.yaml
-    constants.py         project paths and labels
+    constants.py         project paths, labels and column names
 tests/                   pytest tests
 notebooks/               data exploration and analysis
 results/                 charts saved by the notebooks, for the report and slides
@@ -207,9 +207,9 @@ https://github.com/users/alajemba-vik/projects/5/views/1
 - [x] Tests
 - [x] command-line tool
 - [x] Notebook 
-- [ ] Report
-- [ ] AI_USAGE.md
-- [ ] Presentation
+- [x] Report
+- [x] AI_USAGE.md
+- [x] Presentation
 - [ ] Practice defense
 
 
