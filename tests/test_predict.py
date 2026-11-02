@@ -64,6 +64,14 @@ def test_non_number_is_rejected(model_and_features):
         predict_email(model, features, threshold=THRESHOLD)
 
 
+def test_true_or_false_is_rejected(model_and_features):
+    model, features = model_and_features
+    features["word_freq_free"] = True   # JSON true, not a number
+    error = ERROR_NOT_NUMBERS.format(names="word_freq_free")
+    with pytest.raises(ValueError, match=error):
+        predict_email(model, features, threshold=THRESHOLD)
+
+
 def test_infinite_value_is_rejected(model_and_features):
     model, features = model_and_features
     features["word_freq_free"] = float("inf")

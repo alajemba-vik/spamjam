@@ -3,7 +3,7 @@
 An email collection is either:
 
 - a folder of ``.txt`` and ``.eml`` files (subfolders included), or
-- an ``.mbox`` file, the format most mail apps export to.
+- an ``.mbox`` file, a format many mail apps export to (Gmail, Thunderbird).
 
 If the emails sit in a folder called ``spam`` or ``ham`` (or the file is
 ``spam.mbox`` / ``ham.mbox``), that is their label. This is how GrandPied could

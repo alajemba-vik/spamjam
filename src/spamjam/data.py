@@ -72,8 +72,10 @@ class DatasetLoader:
         return df
 
     def remove_duplicates(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Return the data without duplicate rows,
-        so no email can be in both train and test."""
+        """Return the data without exact duplicate rows.
+
+        This way no exact copy of an email can end up in both train and test.
+        """
         clean = df.drop_duplicates().reset_index(drop=True)
         logger.info(MSG_DUPLICATES, len(df) - len(clean))
         return clean

@@ -2,8 +2,8 @@
 
     streamlit run src/spamjam/app.py
 
-It uses the model saved by `spamjam train` and the threshold from config.yaml,
-so it gives the same answers as `spamjam predict`.
+It uses the two models saved by `spamjam train` and their thresholds from
+config.yaml, so it gives the same answers as `spamjam predict`.
 """
 
 from pathlib import Path
@@ -78,7 +78,7 @@ VERDICT_HAM = ("Livré", "This looks like a real email. It would go straight to 
 MSG_PROBABILITY = "Spam probability: {probability:.1%} (flagged from {threshold:.1%})"
 MSG_EXPLANATION = (
     "The threshold of {threshold} was chosen so that about 95 % of the emails "
-    "SpamJam flags really are spam."
+    "SpamJam flags really are spam, with Spambase's mix of spam and real emails."
 )
 MSG_WHY = (
     "The features that pushed this email the most. Pink pushes towards spam, "

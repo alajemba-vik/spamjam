@@ -139,7 +139,7 @@ It opens a page where you either edit the feature values (the box starts with `e
 # Tests and code quality
 
 ```bash
-pytest        # 67 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
+pytest        # 68 tests: data, pipeline (no leakage), training, metrics, threshold, prediction, features from text, reading many emails, both versions, command line, Streamlit page
 ruff check .  # style (PEP 8), errors, import order, names and docstrings, notebooks included
 ```
 
@@ -173,6 +173,7 @@ src/spamjam/
 tests/                   pytest tests
 notebooks/               data exploration and analysis
 results/                 charts saved by the notebooks, for the report and slides
+reports/                 report.pdf (with Appendix A, the limitations) and slides.pdf
 examples/                example inputs for `spamjam predict` (JSON and text)
 docs/data_dictionary.md  what every column of the dataset means
 docs/limitations.md      what SpamJam can't do, with the numbers behind it
@@ -207,9 +208,9 @@ https://github.com/users/alajemba-vik/projects/5/views/1
 - [x] Tests
 - [x] command-line tool
 - [x] Notebook 
-- [ ] Report
-- [ ] AI_USAGE.md
-- [ ] Presentation
+- [x] Report
+- [x] AI_USAGE.md
+- [x] Presentation
 - [ ] Practice defense
 
 

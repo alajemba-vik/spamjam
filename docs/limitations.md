@@ -183,6 +183,23 @@ clients, would be flagged. The second version doesn't fix this: it gives the
 "thanks for your order" email 94 %, above its threshold of 82 %.
 
 
+## 11. What we did not check
+
+- **Near-duplicate emails.** We removed exact copies only. Spam campaigns send
+  many almost identical emails, so near-copies can sit on both sides of the
+  split and make the test score look better than it is.
+- **The cross-validation score is slightly optimistic.** It is the best score
+  over the whole grid, so it is a little high by construction (nested
+  cross-validation would avoid this). The test score, 0.959, shows the gap is
+  small.
+- **Calibration.** The page shows a "spam probability", but we did not check
+  with a calibration plot that, for example, emails scored 0.8 are spam 80 %
+  of the time.
+- **Drift.** Spam changes every month. A deployed model would need its
+  flagged-email rate monitored and regular retraining, which this project
+  doesn't cover.
+
+
 ## Risks of deploying it
 
 - **Errors.** Even at 95 % precision, real emails get flagged (14 of 506 on
@@ -197,6 +214,13 @@ clients, would be flagged. The second version doesn't fix this: it gives the
   capital letters). Using it at GrandPied requires informing employees, clear
   rules on who can see quarantined emails, and compliance with privacy law
   (GDPR).
+- **Over-trust.** If staff stop checking the quarantine because "the filter is
+  95 % right", the 5 % of flagged real emails are lost anyway. The quarantine
+  has to stay easy to review, and what people rescue from it is the best data
+  to retrain on.
+- **Security of the model file.** The model is saved with joblib, which can run
+  code when a file is loaded. Only load model files trained by GrandPied
+  itself, never one received from someone else.
 
 
 ## What it means for GrandPied
