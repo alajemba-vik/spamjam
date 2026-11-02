@@ -18,9 +18,9 @@ TMP_CONFIG_FILE = "config.yaml"
 TMP_MODEL_FILE = "model.joblib"
 TMP_MODEL_NO_DONOR_FILE = "model_without_donor_words.joblib"
 
-# Use a random sample of 300 real emails instead of all say 4601, so the
-# tests run faster, and they check that our CODE works, which doesn't need all
-# the data
+# Most tests use a random sample of 300 real emails instead of all 4,601: they
+# check that our code works, which doesn't need all the data, and they run
+# faster.
 SAMPLE_SIZE = 300
 SAMPLE_SEED = 0
 # Emails used to train the models of the command-line and Streamlit tests,
