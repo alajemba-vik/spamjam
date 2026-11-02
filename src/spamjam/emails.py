@@ -14,6 +14,7 @@ not the technical headers (servers, dates, ids), which would add capital
 letters and numbers that aren't part of the message.
 """
 
+import html
 import mailbox
 import re
 from email import message_from_bytes, policy
@@ -48,7 +49,8 @@ def message_text(message: EmailMessage) -> str:
     body = message.get_body(preferencelist=("plain", "html"))
     text = body.get_content() if body is not None else ""
     if body is not None and body.get_content_type() == "text/html":
-        text = HTML_TAG.sub(" ", text)
+        # Drop the tags, then turn entities like &amp; back into characters.
+        text = html.unescape(HTML_TAG.sub(" ", text))
     return EMAIL_TEXT.format(subject=message["subject"] or "", body=text)
 
 

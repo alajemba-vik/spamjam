@@ -10,6 +10,7 @@ import yaml
 from spamjam.cli import (
     ERROR_NO_CONFIG,
     ERROR_NO_MODEL,
+    ERROR_OUTPUT_ONE_EMAIL,
     LABELS_CONFUSION_COLUMNS,
     LABELS_CONFUSION_ROWS,
     VERSIONS,
@@ -75,11 +76,17 @@ def test_predict_a_folder_of_emails(trained, tmp_path):
     emails.mkdir()
     (emails / "a.txt").write_text("Get FREE money today!!!", encoding="utf-8")
     (emails / "b.txt").write_text("See you at the meeting.", encoding="utf-8")
-    output = tmp_path / "predictions.csv"
+    output = tmp_path / "new_folder" / "predictions.csv"   # the folder is created
     run(trained[0], "predict", "--text", str(emails), "--output", str(output))
     predictions = pd.read_csv(output)
     assert predictions[EMAIL_COL].tolist() == ["a.txt", "b.txt"]
     assert set(predictions[TARGET_COL]) <= {HAM, SPAM}
+
+
+def test_output_with_one_email_is_refused(trained, tmp_path):
+    output = tmp_path / "prediction.csv"
+    with pytest.raises(SystemExit, match=re.escape(ERROR_OUTPUT_ONE_EMAIL)):
+        run(trained[0], "predict", "--text", str(EXAMPLE_TEXT), "--output", str(output))
 
 
 def test_features_saves_a_dataset_in_the_spambase_format(trained, tmp_path, real_df):

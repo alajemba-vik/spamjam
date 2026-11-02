@@ -54,7 +54,7 @@ none of them removes these words either.
 The 48 word features are all English words (`free`, `money`, `remove`,
 `business`, ...). A French email matches none of them, so the model only has
 the punctuation (`!`, `$`, `(`, `;`, `[`, `#`) and the capital letters to go
-on.
+on. Even those are English: accented capitals like "É" aren't counted.
 
 | Email | Spam probability | Verdict |
 |---|---|---|
