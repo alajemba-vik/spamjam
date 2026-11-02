@@ -173,7 +173,6 @@ src/spamjam/
 tests/                   pytest tests
 notebooks/               data exploration and analysis
 results/                 charts saved by the notebooks, for the report and slides
-reports/                 report.pdf (with Appendix A, the limitations) and slides.pdf
 examples/                example inputs for `spamjam predict` (JSON and text)
 docs/data_dictionary.md  what every column of the dataset means
 docs/limitations.md      what SpamJam can't do, with the numbers behind it
