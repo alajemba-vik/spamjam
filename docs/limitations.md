@@ -71,10 +71,10 @@ means new features and a model trained on its own French emails.
 ## 3. "95 % precision" only holds for Spambase's share of spam
 
 On the test set, 95 % of the emails SpamJam flags really are spam. That
-number depends on how much of the mail is spam: about 40 % in Spambase. The
-model's own error rates don't change with the mix (it flags 2.8 % of real
-emails and catches 79.5 % of spam), but with less spam, the few real emails
-it flags make up a bigger part of what it flags:
+number depends on how much of the mail is spam: about 40 % in Spambase. If
+only the mix changed, the model's own error rates would stay the same (it
+flags 2.8 % of real emails and catches 79.5 % of spam), but with less spam,
+the few real emails it flags would make up a bigger part of what it flags:
 
 | Share of spam in the mail | Precision |
 |---|---|
@@ -83,8 +83,9 @@ it flags make up a bigger part of what it flags:
 | 10 % | 76 % |
 | 5 % | 60 % |
 
-We don't know GrandPied's share of spam, so the threshold would have to be
-chosen again on GrandPied's own emails to keep 95 %.
+We don't know GrandPied's share of spam, and its emails differ in other ways
+too (see point 10), so the threshold would have to be chosen again on
+GrandPied's own emails to keep 95 %.
 
 
 ## 4. The test results have a margin of error
